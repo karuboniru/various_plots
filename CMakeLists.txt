@@ -16,16 +16,16 @@ add_library(event STATIC src/event.cxx)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic")
 add_executable(pion main.cxx)
-target_link_libraries(pion ROOT::Tree ROOT::EG event analysis)
+target_link_libraries(pion ROOT::Tree ROOT::EG event)
 install(TARGETS pion DESTINATION bin)
 
 add_executable(compare compare.cxx)
-target_link_libraries(compare ROOT::Tree ROOT::EG event analysis)
+target_link_libraries(compare ROOT::Tree ROOT::EG event)
 install(TARGETS compare DESTINATION bin)
 
-add_executable(compare_cut compare_cut.cxx)
-target_link_libraries(compare_cut ROOT::Tree ROOT::EG event analysis)
-install(TARGETS compare_cut DESTINATION bin)
+# add_executable(compare_cut compare_cut.cxx)
+# target_link_libraries(compare_cut ROOT::Tree ROOT::EG event)
+# install(TARGETS compare_cut DESTINATION bin)
 
 # add_executable(muon muon.cxx)
 # target_link_libraries(muon ROOT::Tree ROOT::EG event )

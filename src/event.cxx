@@ -1,10 +1,10 @@
 #include <TDatabasePDG.h>
 #include <event.h>
 #include <functional>
-#include <sstream>
 #include <set>
+#include <sstream>
 
-template <typename T, template<typename ...> typename V>
+template <typename T, template <typename...> typename V> inline 
 T add(const V<T> &vec)
 {
     T sum{};
@@ -33,7 +33,15 @@ double event::getQ2() const
 
 double event::getW() const
 {
-    const auto p_final_state = add(in_particles.at(init_nucleon_pdgid)) - add(out_particles.at(13)) + add(in_particles.at(14));
+    // const auto p_final_state = add(in_particles.at(init_nucleon_pdgid)) - add(out_particles.at(13)) + add(in_particles.at(14));
+    TLorentzVector p_final_state{};
+    for (const auto &[pdgid, p4v] : out_particles)
+    {
+        if (pdgid != 13)
+        {
+            p_final_state += add(p4v);
+        }
+    }
     return p_final_state.M();
 }
 
@@ -78,10 +86,10 @@ const std::string &event::get_event_info()
 
 std::size_t event::get_count(int id) const
 {
-    if(out_particles.find(id) == out_particles.end())
+    if (out_particles.find(id) == out_particles.end())
     {
         return 0;
-    } 
+    }
     return out_particles.at(id).size();
 }
 
@@ -118,7 +126,7 @@ bool event::is_good_event() const
     }
     for (const auto &[id, p4] : out_particles) // only allowed particles
     {
-        if(std::set{2212, 2112, 13, 211, 111}.count(abs(id)) == 0) // not p, n, mu, pi0, pi+, pi-
+        if (std::set{2212, 2112, 13, 211, 111}.count(abs(id)) == 0) // not p, n, mu, pi0, pi+, pi-
         {
             return false;
         }
@@ -127,7 +135,7 @@ bool event::is_good_event() const
     {
         return false;
     }
-    
+
     return true;
 }
 
