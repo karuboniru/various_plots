@@ -63,33 +63,33 @@ int main(int argc, char *argv[])
         normalize_plot(histogram, output_prefix, "col", true);
         normalize_plot(histogram, output_prefix, "col", false);
     }
-    for (const auto &[channelname, histogram] : instance.Qhistograms)
+    for (const auto &[channelname, histogram] : instance.p_all.Qhistograms)
     {
         // plot(histogram, output_prefix, "hist");
-        plot(histogram, output_prefix, instance.xsecs[channelname], "hist");
+        plot(histogram, output_prefix, instance.p_all.xsecs[channelname], "hist");
     }
-    for (const auto &[channelname, histogram] : instance.Whistograms)
+    for (const auto &[channelname, histogram] : instance.p_all.Whistograms)
     {
         // plot(histogram, output_prefix, "hist");
-        plot(histogram, output_prefix, instance.xsecs[channelname], "hist");
+        plot(histogram, output_prefix, instance.p_all.xsecs[channelname], "hist");
     }
-    for (const auto &[channelname, histogram] : instance.Ehistograms)
+    for (const auto &[channelname, histogram] : instance.p_all.Ehistograms)
     {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.p_mu)
+    for (const auto &[channelname, histogram] : instance.p_all.p_mu)
     {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.pl_mu)
+    for (const auto &[channelname, histogram] : instance.p_all.pl_mu)
     {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.pt_mu)
+    for (const auto &[channelname, histogram] : instance.p_all.pt_mu)
     {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.angle_mu)
+    for (const auto &[channelname, histogram] : instance.p_all.angle_mu)
     {
         plot(histogram, output_prefix, "hist");
     }
@@ -97,22 +97,22 @@ int main(int argc, char *argv[])
         std::size_t i{0};
         for (const auto &[channelname, title] : instance.single_pion_channels)
         {
-            instance.Qhistograms[channelname]->SetLineColor(col[i]);
-            instance.Qhistograms[channelname]->SetFillColor(col[i]);
-            instance.Whistograms[channelname]->SetLineColor(col[i]);
-            instance.Whistograms[channelname]->SetFillColor(col[i]);
-            instance.Ehistograms[channelname]->SetLineColor(col[i]);
-            instance.Ehistograms[channelname]->SetFillColor(col[i]);
+            instance.p_all.Qhistograms[channelname]->SetLineColor(col[i]);
+            instance.p_all.Qhistograms[channelname]->SetFillColor(col[i]);
+            instance.p_all.Whistograms[channelname]->SetLineColor(col[i]);
+            instance.p_all.Whistograms[channelname]->SetFillColor(col[i]);
+            instance.p_all.Ehistograms[channelname]->SetLineColor(col[i]);
+            instance.p_all.Ehistograms[channelname]->SetFillColor(col[i]);
             ++i;
         }
         for (const auto &[channelname, title] : instance.double_pion_channels)
         {
-            instance.Qhistograms[channelname]->SetLineColor(col[i]);
-            instance.Qhistograms[channelname]->SetFillColor(col[i]);
-            instance.Whistograms[channelname]->SetLineColor(col[i]);
-            instance.Whistograms[channelname]->SetFillColor(col[i]);
-            instance.Ehistograms[channelname]->SetLineColor(col[i]);
-            instance.Ehistograms[channelname]->SetFillColor(col[i]);
+            instance.p_all.Qhistograms[channelname]->SetLineColor(col[i]);
+            instance.p_all.Qhistograms[channelname]->SetFillColor(col[i]);
+            instance.p_all.Whistograms[channelname]->SetLineColor(col[i]);
+            instance.p_all.Whistograms[channelname]->SetFillColor(col[i]);
+            instance.p_all.Ehistograms[channelname]->SetLineColor(col[i]);
+            instance.p_all.Ehistograms[channelname]->SetFillColor(col[i]);
             ++i;
         }
     }
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
         std::unique_ptr<THStack> stack = std::make_unique<THStack>("stackQ", "; #it{Q}^{2} (GeV^{2}); d#it{#sigma}/d#it{Q}^{2} (cm^{2}/GeV^{2})");
         std::unique_ptr<TLegend> legend = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
         // std::size_t i{0};
-        for (const auto &[channelname, histogram] : instance.Qhistograms)
+        for (const auto &[channelname, histogram] : instance.p_all.Qhistograms)
         {
             // histogram->SetLineColor(col[i]);
             // histogram->SetFillColor(col[i++]);
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
         std::unique_ptr<THStack> stack2 = std::make_unique<THStack>("stackW", "; #it{W} (GeV); d#it{#sigma}/d#it{W} (cm^{2}/GeV)");
         std::unique_ptr<TLegend> legend = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
         // std::size_t i{0};
-        for (const auto &[channelname, histogram] : instance.Whistograms)
+        for (const auto &[channelname, histogram] : instance.p_all.Whistograms)
         {
             // histogram->SetLineColor(col[i]);
             // histogram->SetFillColor(col[i++]);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     {
         std::unique_ptr<THStack> stack3 = std::make_unique<THStack>("stackE", "; #it{E} (GeV); #it{#sigma}(#it{E}) (cm^{2}/GeV)");
         std::unique_ptr<TLegend> legend = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
-        for (const auto &[channelname, histogram] : instance.Ehistograms)
+        for (const auto &[channelname, histogram] : instance.p_all.Ehistograms)
         {
             // histogram->SetLineColor(col[i]);
             // histogram->SetFillColor(col[i++]);
@@ -173,15 +173,15 @@ int main(int argc, char *argv[])
         for (const auto &[channelname, title] : instance.single_pion_channels)
         {
             // std::cout << "adding channel " << channelname << std::endl;
-            stackQ->Add(instance.Qhistograms[channelname].get());
-            instance.Qhistograms[channelname]->SaveAs(("Q_" + channelname + ".root").c_str());
-            stackW->Add(instance.Whistograms[channelname].get());
-            instance.Whistograms[channelname]->SaveAs(("W_" + channelname + ".root").c_str());
-            stackE->Add(instance.Ehistograms[channelname].get());
-            instance.Ehistograms[channelname]->SaveAs(("E_" + channelname + ".root").c_str());
-            legendQ->AddEntry(instance.Qhistograms[channelname].get(), title.c_str(), "f");
-            legendW->AddEntry(instance.Whistograms[channelname].get(), title.c_str(), "f");
-            legendE->AddEntry(instance.Ehistograms[channelname].get(), title.c_str(), "f");
+            stackQ->Add(instance.p_all.Qhistograms[channelname].get());
+            instance.p_all.Qhistograms[channelname]->SaveAs(("Q_" + channelname + ".root").c_str());
+            stackW->Add(instance.p_all.Whistograms[channelname].get());
+            instance.p_all.Whistograms[channelname]->SaveAs(("W_" + channelname + ".root").c_str());
+            stackE->Add(instance.p_all.Ehistograms[channelname].get());
+            instance.p_all.Ehistograms[channelname]->SaveAs(("E_" + channelname + ".root").c_str());
+            legendQ->AddEntry(instance.p_all.Qhistograms[channelname].get(), title.c_str(), "f");
+            legendW->AddEntry(instance.p_all.Whistograms[channelname].get(), title.c_str(), "f");
+            legendE->AddEntry(instance.p_all.Ehistograms[channelname].get(), title.c_str(), "f");
         }
         plot(stackQ, output_prefix, "hist", legendQ.get());
         plot(stackW, output_prefix, "hist", legendW.get());
@@ -196,12 +196,12 @@ int main(int argc, char *argv[])
         std::unique_ptr<TLegend> legendE = std::make_unique<TLegend>(0.1, 0.1, 0.3, 0.3);
         for (const auto &[channelname, title] : instance.double_pion_channels)
         {
-            stackQ->Add(instance.Qhistograms[channelname].get());
-            stackW->Add(instance.Whistograms[channelname].get());
-            stackE->Add(instance.Ehistograms[channelname].get());
-            legendQ->AddEntry(instance.Qhistograms[channelname].get(), title.c_str(), "f");
-            legendW->AddEntry(instance.Whistograms[channelname].get(), title.c_str(), "f");
-            legendE->AddEntry(instance.Ehistograms[channelname].get(), title.c_str(), "f");
+            stackQ->Add(instance.p_all.Qhistograms[channelname].get());
+            stackW->Add(instance.p_all.Whistograms[channelname].get());
+            stackE->Add(instance.p_all.Ehistograms[channelname].get());
+            legendQ->AddEntry(instance.p_all.Qhistograms[channelname].get(), title.c_str(), "f");
+            legendW->AddEntry(instance.p_all.Whistograms[channelname].get(), title.c_str(), "f");
+            legendE->AddEntry(instance.p_all.Ehistograms[channelname].get(), title.c_str(), "f");
         }
         plot(stackQ, output_prefix, "hist", legendQ.get());
         plot(stackW, output_prefix, "hist", legendW.get());

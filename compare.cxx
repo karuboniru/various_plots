@@ -100,14 +100,14 @@ int main(int argc, char *argv[])
     analysis hybrid(input_files_hyb, false);
     for (const auto &[channelname, title] : resevent2.single_pion_channels)
     {
-        std::array<double, 3> xsecp{resevent2.xsecs[channelname], resevent2.xsecs_cut[channelname], hybrid.xsecs[channelname]};
-        plot_compare(resevent2.Qhistograms[channelname].get(), resevent2.Qhistograms_cut[channelname].get(), hybrid.Qhistograms[channelname].get(), output_prefix, xsecp);
-        plot_compare(resevent2.Whistograms[channelname].get(), resevent2.Whistograms_cut[channelname].get(), hybrid.Whistograms[channelname].get(), output_prefix, xsecp);
-        plot_compare(resevent2.Ehistograms[channelname].get(), resevent2.Ehistograms_cut[channelname].get(), hybrid.Ehistograms[channelname].get(), output_prefix, {0, 0, 0.});
-        plot_compare(resevent2.p_mu[channelname].get(), resevent2.p_mu_cut[channelname].get(), hybrid.p_mu[channelname].get(), output_prefix, xsecp);
-        plot_compare(resevent2.pl_mu[channelname].get(), resevent2.pl_mu_cut[channelname].get(), hybrid.pl_mu[channelname].get(), output_prefix, xsecp);
-        plot_compare(resevent2.pt_mu[channelname].get(), resevent2.pt_mu_cut[channelname].get(), hybrid.pt_mu[channelname].get(), output_prefix, xsecp);
-        plot_compare(resevent2.angle_mu[channelname].get(), resevent2.angle_mu_cut[channelname].get(), hybrid.angle_mu[channelname].get(), output_prefix, xsecp);
+        std::array<double, 3> xsecp{resevent2.p_all.xsecs[channelname], resevent2.p_cut.xsecs[channelname], hybrid.p_all.xsecs[channelname]};
+        plot_compare(resevent2.p_all.Qhistograms[channelname].get(), resevent2.p_cut.Qhistograms[channelname].get(), hybrid.p_all.Qhistograms[channelname].get(), output_prefix, xsecp);
+        plot_compare(resevent2.p_all.Whistograms[channelname].get(), resevent2.p_cut.Whistograms[channelname].get(), hybrid.p_all.Whistograms[channelname].get(), output_prefix, xsecp);
+        plot_compare(resevent2.p_all.Ehistograms[channelname].get(), resevent2.p_cut.Ehistograms[channelname].get(), hybrid.p_all.Ehistograms[channelname].get(), output_prefix, {0, 0, 0.});
+        plot_compare(resevent2.p_all.p_mu[channelname].get(), resevent2.p_cut.p_mu[channelname].get(), hybrid.p_all.p_mu[channelname].get(), output_prefix, xsecp);
+        plot_compare(resevent2.p_all.pl_mu[channelname].get(), resevent2.p_cut.pl_mu[channelname].get(), hybrid.p_all.pl_mu[channelname].get(), output_prefix, xsecp);
+        plot_compare(resevent2.p_all.pt_mu[channelname].get(), resevent2.p_cut.pt_mu[channelname].get(), hybrid.p_all.pt_mu[channelname].get(), output_prefix, xsecp);
+        plot_compare(resevent2.p_all.angle_mu[channelname].get(), resevent2.p_cut.angle_mu[channelname].get(), hybrid.p_all.angle_mu[channelname].get(), output_prefix, xsecp);
     }
     return 0;
 }

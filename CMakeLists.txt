@@ -12,6 +12,7 @@ include_directories(
 
 add_library(event STATIC src/event.cxx)
 # add_library(analysis STATIC src/analysis.cxx)
+# add_library(analysis_plot STATIC src/analysis_plot.cxx)
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic")
