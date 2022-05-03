@@ -3,7 +3,9 @@
 #include <TGaxis.h>
 #include <TGraph.h>
 #include <TH2D.h>
+#include <THStack.h>
 #include <TLatex.h>
+#include <TLegend.h>
 #include <TPaletteAxis.h>
 #include <TROOT.h>
 #include <TStyle.h>
@@ -12,15 +14,15 @@
 
 namespace style
 {
-    Double_t fgkTextSize = 0.05;
-    Double_t fgkTitleSize = 0.05;
-    Double_t fgkMarkerSize = 1;
-    Double_t fgkLineWidth = 2;
-    Int_t fgkTextFont = 42;
-    Double_t fgkLabelOffset = 0.01;
-    Double_t fgkXTitleOffset = 1.25; // 1.1;//1.25;
-    Double_t fgkYTitleOffset = 1.1;  // 1.2;
-    Double_t fgkTickLength = 0.02;
+    static constexpr Double_t fgkTextSize = 0.05;
+    static constexpr Double_t fgkTitleSize = 0.05;
+    static constexpr Double_t fgkMarkerSize = 1;
+    static constexpr Double_t fgkLineWidth = 2;
+    static constexpr Int_t fgkTextFont = 42;
+    static constexpr Double_t fgkLabelOffset = 0.01;
+    static constexpr Double_t fgkXTitleOffset = 1.25; // 1.1;//1.25;
+    static constexpr Double_t fgkYTitleOffset = 1.1;  // 1.2;
+    static constexpr Double_t fgkTickLength = 0.02;
 } // namespace name
 
 class global_style
@@ -71,7 +73,7 @@ public:
     }
 };
 
-static global_style global_style_instance;
+inline global_style global_style_instance;
 
 template <typename T>
 void PadSetup(T &currentPad, const Double_t currentLeft = 0.12, const Double_t currentTop = 0.09, const Double_t currentRight = 0.13, const Double_t currentBottom = 0.14)
@@ -119,7 +121,7 @@ void ResetStyle(T *obj, TVirtualPad *cpad, Bool_t kcen)
         printf("style::ResetStyle obj null!\n");
         exit(1);
     }
-    
+
     AxisStyle(obj->GetXaxis(), kcen);
     AxisStyle(obj->GetYaxis(), kcen);
 
@@ -150,7 +152,7 @@ void ResetStyle(T *obj, TVirtualPad *cpad, Bool_t kcen)
     }
 }
 
-decltype(auto) getCanvas(const char *name = "")
+decltype(auto) inline getCanvas(const char *name = "")
 {
     const double factor = 2;
     auto c = std::make_unique<TCanvas>(name, name, 800 * factor, 600 * factor);
@@ -177,7 +179,6 @@ void plot(const T &obj, const std::string &path_prefix, const char *opt = "", TL
         {
             return; // do nothing for empty THStack, instead of crashing
         }
-        
     }
     ResetStyle(&*obj, c.get()->GetPad(0), 1);
     obj->Draw(opt);
@@ -217,7 +218,7 @@ void plot(const T &obj, const std::string &path_prefix, double xsec, const char 
     // la->Draw();
     // la->Paint();
     std::unique_ptr<TLegend> leg{new TLegend};
-    leg->AddEntry((TObject*)0, ("#sigma = "s + std::to_string(xsec) + "#times 10^{-38} cm^{2}").c_str(), "p");
+    leg->AddEntry((TObject *)0, ("#sigma = "s + std::to_string(xsec) + "#times 10^{-38} cm^{2}").c_str(), "p");
     leg->SetBorderSize(-1);
     leg->Draw();
     c->Update();

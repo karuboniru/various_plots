@@ -14,7 +14,6 @@ private:
     std::unique_ptr<TChain> chain{};
     std::tuple<branch_type*...> data;
     std::array<TBranch *, sizeof...(branch_type)> b_add;
-    const char *tree_name;
 
     template <class T, T I, T... J>
     inline void do_delete(std::integer_sequence<T, I, J...>)
@@ -81,7 +80,7 @@ private:
     }
 
 public:
-    root_chain(const std::vector<std::string> file_list, const char *tree_name, const std::array<const char *, sizeof...(branch_type)> names) : tree_name(tree_name)
+    root_chain(const std::vector<std::string> file_list, const char *tree_name, const std::array<const char *, sizeof...(branch_type)> names) 
     {
         chain = std::make_unique<TChain>(tree_name);
         for (const auto &i : file_list)
