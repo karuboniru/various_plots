@@ -1,11 +1,10 @@
 #pragma once
 
-#include <map>
 #include <TLorentzVector.h>
+#include <map>
 #include <vector>
 
-class event
-{
+class event {
 private:
     std::map<int, std::vector<TLorentzVector>> in_particles{};
     std::map<int, std::vector<TLorentzVector>> out_particles{};
@@ -14,14 +13,15 @@ private:
     int init_nucleon_charge{};
     double wgt{};
     std::string channelname{};
+
 public:
     event();
     ~event();
     double getQ2() const;
     double getW() const;
-    void add_particle_in(int id, const TLorentzVector & p4);
-    void add_particle_out(int id, const TLorentzVector & p4);
-    const std::string & get_event_info();
+    void add_particle_in(int id, const TLorentzVector &p4);
+    void add_particle_out(int id, const TLorentzVector &p4);
+    const std::string &get_event_info();
     std::size_t get_pi0_count() const;
     std::size_t get_pip_count() const;
     std::size_t get_pim_count() const;

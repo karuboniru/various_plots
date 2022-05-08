@@ -26,16 +26,13 @@
 constexpr int MAX_COUNT = 128;
 using std::string_literals::operator""s;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     gStyle->SetOptStat(0);
     gSystem->ResetSignal(kSigBus);
     gSystem->ResetSignal(kSigSegmentationViolation);
     gSystem->ResetSignal(kSigIllegalInstruction);
-    std::array<int, 10> col{kRed, kGreen, kBlue, kMagenta, kCyan,
-                            kOrange, kViolet, kGray, kYellow, kBlack};
-    if (argc < 3)
-    {
+    std::array<int, 10> col{kRed, kGreen, kBlue, kMagenta, kCyan, kOrange, kViolet, kGray, kYellow, kBlack};
+    if (argc < 3) {
         std::cout << "Usage: " << argv[0] << " <input_file_list> <output_prefix> [do_cut (default 0, 1 to enable)]" << std::endl;
         return 1;
     }
@@ -46,57 +43,48 @@ int main(int argc, char *argv[])
         std::fstream input_file_list_stream(argv[1]);
 
         std::string input_file;
-        while (input_file_list_stream >> input_file)
-        {
+        while (input_file_list_stream >> input_file) {
             // std::cout << "Adding " << input_file << " to input file list" << std::endl;
             input_files.push_back(input_file);
         }
     }
     analysis instance(input_files, do_cut);
-    for (const auto &[channelname, histogram] : instance.QWhistograms)
-    {
+    for (const auto &[channelname, histogram] : instance.QWhistograms) {
         plot(histogram, output_prefix, "colz");
         // plot(normalize_slice(histogram), output_prefix, "colz");
         // plot(normalize_slice(histogram, false), output_prefix, "colz");
-        // plot_with_normalized(normalize_slice(histogram), std::unique_ptr<TH1D>(reinterpret_cast<TH1D *>(Qhistograms[channelname]->Clone())), output_prefix, "col", true);
-        // plot_with_normalized(normalize_slice(histogram, false), std::unique_ptr<TH1D>(reinterpret_cast<TH1D *>(Whistograms[channelname]->Clone())), output_prefix, "col", false);
-        normalize_plot(histogram, output_prefix, "col", true);
-        normalize_plot(histogram, output_prefix, "col", false);
+        // plot_with_normalized(normalize_slice(histogram), std::unique_ptr<TH1D>(reinterpret_cast<TH1D *>(Qhistograms[channelname]->Clone())), output_prefix,
+        // "col", true); plot_with_normalized(normalize_slice(histogram, false), std::unique_ptr<TH1D>(reinterpret_cast<TH1D
+        // *>(Whistograms[channelname]->Clone())), output_prefix, "col", false);
+        normalize_plot(histogram.get(), output_prefix, "col", true);
+        normalize_plot(histogram.get(), output_prefix, "col", false);
     }
-    for (const auto &[channelname, histogram] : instance.p_all.Qhistograms)
-    {
+    for (const auto &[channelname, histogram] : instance.p_all.Qhistograms) {
         // plot(histogram, output_prefix, "hist");
         plot(histogram, output_prefix, instance.p_all.xsecs[channelname], "hist");
     }
-    for (const auto &[channelname, histogram] : instance.p_all.Whistograms)
-    {
+    for (const auto &[channelname, histogram] : instance.p_all.Whistograms) {
         // plot(histogram, output_prefix, "hist");
         plot(histogram, output_prefix, instance.p_all.xsecs[channelname], "hist");
     }
-    for (const auto &[channelname, histogram] : instance.p_all.Ehistograms)
-    {
+    for (const auto &[channelname, histogram] : instance.p_all.Ehistograms) {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.p_all.p_mu)
-    {
+    for (const auto &[channelname, histogram] : instance.p_all.p_mu) {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.p_all.pl_mu)
-    {
+    for (const auto &[channelname, histogram] : instance.p_all.pl_mu) {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.p_all.pt_mu)
-    {
+    for (const auto &[channelname, histogram] : instance.p_all.pt_mu) {
         plot(histogram, output_prefix, "hist");
     }
-    for (const auto &[channelname, histogram] : instance.p_all.angle_mu)
-    {
+    for (const auto &[channelname, histogram] : instance.p_all.angle_mu) {
         plot(histogram, output_prefix, "hist");
     }
     {
         std::size_t i{0};
-        for (const auto &[channelname, title] : instance.single_pion_channels)
-        {
+        for (const auto &[channelname, title] : instance.single_pion_channels) {
             instance.p_all.Qhistograms[channelname]->SetLineColor(col[i]);
             instance.p_all.Qhistograms[channelname]->SetFillColor(col[i]);
             instance.p_all.Whistograms[channelname]->SetLineColor(col[i]);
@@ -105,8 +93,7 @@ int main(int argc, char *argv[])
             instance.p_all.Ehistograms[channelname]->SetFillColor(col[i]);
             ++i;
         }
-        for (const auto &[channelname, title] : instance.double_pion_channels)
-        {
+        for (const auto &[channelname, title] : instance.double_pion_channels) {
             instance.p_all.Qhistograms[channelname]->SetLineColor(col[i]);
             instance.p_all.Qhistograms[channelname]->SetFillColor(col[i]);
             instance.p_all.Whistograms[channelname]->SetLineColor(col[i]);
@@ -120,8 +107,7 @@ int main(int argc, char *argv[])
         std::unique_ptr<THStack> stack = std::make_unique<THStack>("stackQ", "; #it{Q}^{2} (GeV^{2}); d#it{#sigma}/d#it{Q}^{2} (cm^{2}/GeV^{2})");
         std::unique_ptr<TLegend> legend = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
         // std::size_t i{0};
-        for (const auto &[channelname, histogram] : instance.p_all.Qhistograms)
-        {
+        for (const auto &[channelname, histogram] : instance.p_all.Qhistograms) {
             // histogram->SetLineColor(col[i]);
             // histogram->SetFillColor(col[i++]);
             stack->Add(histogram.get());
@@ -136,8 +122,7 @@ int main(int argc, char *argv[])
         std::unique_ptr<THStack> stack2 = std::make_unique<THStack>("stackW", "; #it{W} (GeV); d#it{#sigma}/d#it{W} (cm^{2}/GeV)");
         std::unique_ptr<TLegend> legend = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
         // std::size_t i{0};
-        for (const auto &[channelname, histogram] : instance.p_all.Whistograms)
-        {
+        for (const auto &[channelname, histogram] : instance.p_all.Whistograms) {
             // histogram->SetLineColor(col[i]);
             // histogram->SetFillColor(col[i++]);
             stack2->Add(histogram.get());
@@ -151,8 +136,7 @@ int main(int argc, char *argv[])
     {
         std::unique_ptr<THStack> stack3 = std::make_unique<THStack>("stackE", "; #it{E} (GeV); #it{#sigma}(#it{E}) (cm^{2}/GeV)");
         std::unique_ptr<TLegend> legend = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
-        for (const auto &[channelname, histogram] : instance.p_all.Ehistograms)
-        {
+        for (const auto &[channelname, histogram] : instance.p_all.Ehistograms) {
             // histogram->SetLineColor(col[i]);
             // histogram->SetFillColor(col[i++]);
             stack3->Add(histogram.get());
@@ -164,14 +148,16 @@ int main(int argc, char *argv[])
         plot(stack3, output_prefix, "hist", legend.get());
     }
     {
-        std::unique_ptr<THStack> stackQ = std::make_unique<THStack>("stackQ1pi", "Stack Cross Section for 1#pi Channels; #it{Q}^{2} (GeV^{2}); d#it{#sigma}/d#it{Q}^{2} (cm^{2}/GeV^{2})");
-        std::unique_ptr<THStack> stackW = std::make_unique<THStack>("stackW1pi", "Stack Cross Section for 1#pi Channels; #it{W} (GeV); d#it{#sigma}/d#it{W} (cm^{2}/GeV)");
-        std::unique_ptr<THStack> stackE = std::make_unique<THStack>("stackE1pi", "Stack Cross Section for 1#pi Channels; #it{E} (GeV); #it{#sigma}(#it{E}) (cm^{2}/GeV)");
+        std::unique_ptr<THStack> stackQ =
+            std::make_unique<THStack>("stackQ1pi", "Stack Cross Section for 1#pi Channels; #it{Q}^{2} (GeV^{2}); d#it{#sigma}/d#it{Q}^{2} (cm^{2}/GeV^{2})");
+        std::unique_ptr<THStack> stackW =
+            std::make_unique<THStack>("stackW1pi", "Stack Cross Section for 1#pi Channels; #it{W} (GeV); d#it{#sigma}/d#it{W} (cm^{2}/GeV)");
+        std::unique_ptr<THStack> stackE =
+            std::make_unique<THStack>("stackE1pi", "Stack Cross Section for 1#pi Channels; #it{E} (GeV); #it{#sigma}(#it{E}) (cm^{2}/GeV)");
         std::unique_ptr<TLegend> legendQ = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
         std::unique_ptr<TLegend> legendW = std::make_unique<TLegend>(0.1, 0.7, 0.3, 0.9);
         std::unique_ptr<TLegend> legendE = std::make_unique<TLegend>(0.1, 0.1, 0.3, 0.3);
-        for (const auto &[channelname, title] : instance.single_pion_channels)
-        {
+        for (const auto &[channelname, title] : instance.single_pion_channels) {
             // std::cout << "adding channel " << channelname << std::endl;
             stackQ->Add(instance.p_all.Qhistograms[channelname].get());
             instance.p_all.Qhistograms[channelname]->SaveAs(("Q_" + channelname + ".root").c_str());
@@ -194,8 +180,7 @@ int main(int argc, char *argv[])
         std::unique_ptr<TLegend> legendQ = std::make_unique<TLegend>(0.7, 0.7, 0.9, 0.9);
         std::unique_ptr<TLegend> legendW = std::make_unique<TLegend>(0.1, 0.7, 0.3, 0.9);
         std::unique_ptr<TLegend> legendE = std::make_unique<TLegend>(0.1, 0.1, 0.3, 0.3);
-        for (const auto &[channelname, title] : instance.double_pion_channels)
-        {
+        for (const auto &[channelname, title] : instance.double_pion_channels) {
             stackQ->Add(instance.p_all.Qhistograms[channelname].get());
             stackW->Add(instance.p_all.Whistograms[channelname].get());
             stackE->Add(instance.p_all.Ehistograms[channelname].get());
