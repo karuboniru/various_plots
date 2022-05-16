@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
-project(pions)
+project(plotss)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -11,15 +11,11 @@ include_directories(
 )
 
 add_library(event STATIC src/event.cxx)
-add_library(analysis STATIC src/analysis.cxx)
-add_library(analysis_plot STATIC src/analysis_plot.cxx)
+# add_library(analysis STATIC src/analysis.cxx)
+# add_library(analysis_plot STATIC src/analysis_plot.cxx)
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic")
-add_executable(pion main.cxx)
-target_link_libraries(pion ROOT::Tree ROOT::EG analysis analysis_plot event)
-install(TARGETS pion DESTINATION bin)
-
-add_executable(compare compare.cxx)
-target_link_libraries(compare ROOT::Tree ROOT::EG analysis analysis_plot event)
-install(TARGETS compare DESTINATION bin)
+add_executable(plots main.cxx)
+target_link_libraries(plots ROOT::Tree ROOT::EG event)
+install(TARGETS plots DESTINATION bin)

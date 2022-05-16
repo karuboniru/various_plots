@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TDatabasePDG.h>
 #include <TLorentzVector.h>
 #include <map>
 #include <vector>
@@ -15,13 +16,13 @@ private:
     std::string channelname{};
 
 public:
-    event();
+    event(){}
     ~event();
     double getQ2() const;
     double getW() const;
     void add_particle_in(int id, const TLorentzVector &p4);
     void add_particle_out(int id, const TLorentzVector &p4);
-    const std::string &get_event_info();
+    // const std::string &get_event_info();
     std::size_t get_pi0_count() const;
     std::size_t get_pip_count() const;
     std::size_t get_pim_count() const;
@@ -34,4 +35,7 @@ public:
     double get_pt_mu() const;
     double get_pl_mu() const;
     double get_angle_mu() const;
+    bool TKI_phase_cut() const;
+    TLorentzVector get_leading_proton() const;
+    std::vector<TLorentzVector> & get_particle(int pdgid);
 };

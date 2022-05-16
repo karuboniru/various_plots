@@ -3,15 +3,21 @@
 #include <TBranch.h>
 #include <TChain.h>
 #include <concepts>
-#include <type_traits>
+#include <deque>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
-#include <vector>
+#include <thread>
+#include <type_traits>
 
 template <typename... branch_type> class root_chain {
 private:
+    template <class T> struct to_array { typedef T type; };
+    // template <class T, std::size_t N> struct to_array<T[N]> { typedef std::array<typename to_array<T>::type, N> type; };
+    template <class T> using to_array_t = typename to_array<T>::type;
     std::unique_ptr<TChain> chain{};
-    std::tuple<branch_type *...> data;
+    std::tuple<to_array_t<branch_type> *...> data;
     std::array<TBranch *, sizeof...(branch_type)> b_add;
 
     template <class T, T I, T... J> inline void do_delete(std::integer_sequence<T, I, J...>) {
@@ -20,7 +26,7 @@ private:
     }
 
     template <class T, T I> inline void do_delete(std::integer_sequence<T, I>) {
-        typedef typename std::tuple_element<I, std::tuple<branch_type...>>::type thistype;
+        typedef typename std::tuple_element<I, std::tuple<to_array_t<branch_type>...>>::type thistype;
         if (std::is_trivially_copyable<thistype>::value)
             std::default_delete<thistype>{}(std::get<I>(data));
         // simliarI to std::is_array<thistype>::value?delete [] std::get<>(data):delete std::get<I>(data);
@@ -34,13 +40,14 @@ private:
     template <class T, T I> inline void do_setaddress(std::integer_sequence<T, I>, const std::array<const char *, sizeof...(branch_type)> names) {
         b_add[I] = chain->GetBranch(std::get<I>(names));
         assert(b_add[I]);
-        typedef typename std::tuple_element<I, std::tuple<branch_type...>>::type thistype;
+        typedef typename std::tuple_element<I, std::tuple<to_array_t<branch_type>...>>::type thistype;
         if (std::is_trivially_copyable<thistype>::value) {
             // normal case, assign space and SetBranchAddress, the ugly expression
             // is for properly dealing with arrays, the assigned space is then freed
             // by me (not ROOT)
             std::get<I>(data) = reinterpret_cast<thistype *>(new thistype);
-            chain->SetBranchAddress(std::get<I>(names), std::get<I>(data), &b_add[I]);
+            chain->SetBranchAddress(std::get<I>(names),
+                                    reinterpret_cast<decltype(new std::tuple_element<I, std::tuple<branch_type...>>::type)>(std::get<I>(data)), &b_add[I]);
             // following method is broken, don't know why:
             // b_add[I]->SetAddress(std::get<I>(data));
         } else {
@@ -51,7 +58,7 @@ private:
         }
     }
 
-    template <typename T, T... IDs> std::tuple<const branch_type &...> get_elements(std::integer_sequence<T, IDs...>, std::size_t id) {
+    template <typename T, T... IDs> std::tuple<to_array_t<branch_type> &...> get_elements(std::integer_sequence<T, IDs...>, std::size_t id) {
         auto curr = chain->LoadTree(id);
         if (curr < 0) {
             throw;
@@ -60,11 +67,12 @@ private:
             i->GetEntry(curr);
         // chain->GetEntry(curr);
         return {*std::get<IDs>(data)...};
+        // return std::forward_as_tuple(*std::get<IDs>(data)...);
     }
 
 public:
-    template <typename T> 
-    requires std::is_same_v<std::remove_cvref_t<typename std::remove_cvref_t<T>::value_type>, std::string>
+    template <typename T>
+    requires std::is_nothrow_convertible_v<typename std::remove_cvref_t<T>::value_type, std::string>
     root_chain(T &&file_list, const char *tree_name, const std::array<const char *, sizeof...(branch_type)> names) {
         chain = std::make_unique<TChain>(tree_name);
         for (const auto &i : file_list) {
@@ -74,6 +82,7 @@ public:
     }
 
     root_chain(const root_chain &) = delete;
+    root_chain(root_chain &&) = default;
 
     ~root_chain() {
         chain->ResetBranchAddresses();
@@ -106,4 +115,96 @@ public:
 
     decltype(auto) begin() { return iter(0, *this); }
     decltype(auto) end() { return iter(get_entries(), *this); }
+    // basically magic, but it works
+    // ROOT itself is not so multi-thread friendly...
+    // event-by-event parallelization is not a good idea...
+    // template <typename RunManager, typename... Args> RunManager run(size_t threads = 1, Args &&...args) {
+    //     RunManager run(args...);
+    //     // auto run_ptr = std::make_unique<RunManager>(std::forward<Args>(args)...);
+    //     // auto &run = *run_ptr;
+    //     std::deque<std::jthread> threads_pool;
+    //     std::mutex tree_read_mutex;
+    //     auto iter = begin();
+    //     for (size_t i = 0; i < threads; i++) {
+    //         threads_pool.emplace_back([&, i] {
+    //             auto thread_obj = run.get_thread_object();
+    //             while (true) {
+    //                 // std::tuple<branch_type ...> data{};
+    //                 std::function<void()> f{};
+    //                 {
+    //                     std::lock_guard<std::mutex> lock(tree_read_mutex);
+    //                     if (!(iter != end())) {
+    //                         break;
+    //                     }
+    //                     // auto data = std::apply([&](auto &&...args) { return std::tupe<branch_type...>(args...); }, *iter);
+    //                     f = std::apply([&](auto &&...args) { return std::bind([&](auto &&...args) { thread_obj.run(args...); }, args...); }, *iter);
+    //                     ++iter;
+    //                 }
+    //                 // std::apply([&](auto &&...args) { thread_obj.run(args...); }, data);
+    //                 f();
+    //             }
+    //             thread_obj.finalize();
+    //         });
+    //     }
+    //     for (auto &i : threads_pool) {
+    //         i.join();
+    //     }
+    //     run.finalize();
+    //     return run;
+    // }
+};
+
+template <typename... branch_type> class chain_runner {
+private:
+    std::vector<root_chain<branch_type...>> chains{};
+    size_t nthread{};
+
+public:
+    template <typename T>
+    requires std::is_nothrow_convertible_v<typename std::remove_cvref_t<T>::value_type, std::string>
+    chain_runner(T &&file_list, const char *tree_name, const std::array<const char *, sizeof...(branch_type)> names, size_t nthread_ = 16) {
+        nthread = std::min(nthread_, file_list.size());
+        auto split_list = std::make_unique<std::vector<std::string>[]>(nthread);
+        chains.reserve(nthread);
+        for (size_t i = 0; i < file_list.size(); i++) {
+            split_list[i % nthread].push_back(file_list[i]);
+        }
+        for (size_t i = 0; i < nthread; i++) {
+            chains.emplace_back(split_list[i], tree_name, names);
+        }
+    }
+    size_t get_entries() {
+        size_t entries = 0;
+        for (auto &i : chains) {
+            entries += i.get_entries();
+        }
+        return entries;
+    }
+
+    template <typename RunManager, bool finalize_unpar = true, typename... Args> [[nodiscard]] RunManager run(Args &&...args) {
+        RunManager run(std::forward<Args>(args)...);
+        std::vector<std::thread> execute_threads;
+        execute_threads.reserve(nthread);
+        std::mutex finalize_lock;
+        for (auto &chain : chains) {
+            execute_threads.emplace_back([&] {
+                auto thread_obj = run.get_thread_object();
+                for (const auto &s : chain) {
+                    std::apply([&thread_obj](auto &&...args) { thread_obj.run(std::forward<decltype(args)>(args)...); }, s);
+                }
+
+                if constexpr (finalize_unpar) {
+                    std::lock_guard<std::mutex> lock(finalize_lock);
+                    thread_obj.finalize();
+                } else {
+                    thread_obj.finalize();
+                }
+            });
+        }
+        for (auto &i : execute_threads) {
+            i.join();
+        }
+        run.finalize();
+        return run;
+    }
 };

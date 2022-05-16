@@ -1,4 +1,3 @@
-#include <TDatabasePDG.h>
 #include <event.h>
 #include <functional>
 #include <set>
@@ -12,7 +11,17 @@ template <typename T, template <typename...> typename V> inline T add(const V<T>
     return sum;
 }
 
-event::event() {}
+template <typename T, template <typename...> typename V> inline T leading(const V<T> &vec) {
+    T max{};
+    double max_p{};
+    for (const T &p4 : vec) {
+        if (p4.P() > max_p) {
+            max_p = p4.P();
+            max = p4;
+        }
+    }
+    return max;
+}
 
 event::~event() {}
 
@@ -37,32 +46,32 @@ double event::getW() const {
 void event::add_particle_in(int id, const TLorentzVector &p4) {
     if (id > 1000) {
         init_nucleon_pdgid = id;
-        // init_nucleon_charge = TDatabasePDG::Instance()->GetParticle(id)->Charge();
+        // init_nucleon_charge = pdgdb.GetParticle(id)->Charge();
     }
     in_particles[id].push_back(p4);
 }
 
 void event::add_particle_out(int id, const TLorentzVector &p4) { out_particles[id].push_back(p4); }
 
-const std::string &event::get_event_info() {
-    if (!channelname.empty()) {
-        return channelname;
-    }
-    std::stringstream ss;
-    // for (const auto &[id, p4] : in_particles)
-    // {
-    //     ss << TDatabasePDG::Instance()->GetParticle(id)->GetName();
-    // }
-    // ss << ">";
-    for (const auto &[id, p4] : out_particles) {
-        if (out_particles.at(id).size() > 1) {
-            ss << out_particles.at(id).size();
-        }
-        ss << TDatabasePDG::Instance()->GetParticle(id)->GetName();
-    }
-    channelname = ss.str();
-    return channelname;
-}
+// const std::string &event::get_event_info() {
+//     if (!channelname.empty()) {
+//         return channelname;
+//     }
+//     std::stringstream ss;
+//     // for (const auto &[id, p4] : in_particles)
+//     // {
+//     //     ss << pdgdb.GetParticle(id)->GetName();
+//     // }
+//     // ss << ">";
+//     for (const auto &[id, p4] : out_particles) {
+//         if (out_particles.at(id).size() > 1) {
+//             ss << out_particles.at(id).size();
+//         }
+//         ss << pdgdb.GetParticle(id)->GetName();
+//     }
+//     channelname = ss.str();
+//     return channelname;
+// }
 
 std::size_t event::get_count(int id) const {
     if (out_particles.find(id) == out_particles.end()) {
@@ -129,4 +138,23 @@ double event::get_angle_mu() const {
     const auto &p4_muon = out_particles.at(13);
     assert(p4_muon.size() == 1);
     return p4_muon[0].Theta();
+}
+
+bool event::TKI_phase_cut() const {
+    if (out_particles.count(13) == 0 || out_particles.count(2212) == 0) {
+        return false;
+    }
+    const auto leading_p4_muon = leading(out_particles.at(13));
+    const auto p_mu = leading_p4_muon.P();
+    const auto angle_mu = leading_p4_muon.Theta() * 180 / M_PI;
+    const auto leading_p4_proton = leading(out_particles.at(2212));
+    const auto p_proton = leading_p4_proton.P();
+    // const auto angle_proton = leading_p4_proton.Theta() * 180 / M_PI;
+    return 1.5 < p_mu && p_mu < 20. && angle_mu < 25. && 0.45 < p_proton;
+}
+
+TLorentzVector event::get_leading_proton() const { return leading(out_particles.at(2212)); }
+
+std::vector<TLorentzVector> &event::get_particle(int pdgid){
+    return out_particles[pdgid];
 }
