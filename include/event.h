@@ -4,38 +4,33 @@
 #include <TLorentzVector.h>
 #include <map>
 #include <vector>
-
-class event {
+template <typename T> class eq_range {
 private:
-    std::map<int, std::vector<TLorentzVector>> in_particles{};
-    std::map<int, std::vector<TLorentzVector>> out_particles{};
-    // TLorentzVector init_nucleon{};
-    int init_nucleon_pdgid{};
-    int init_nucleon_charge{};
-    double wgt{};
-    std::string channelname{};
+    T pair;
 
 public:
-    event(){}
+    template <typename T_> eq_range(T_ &&p) : pair(p){}
+    decltype(auto) begin() { return pair.first; };
+    decltype(auto) end() { return pair.second; };
+};
+template <typename T_> eq_range(T_ &&) -> eq_range<std::remove_cvref_t<T_>>;
+class event {
+private:
+    std::unordered_multimap<int, TLorentzVector> in_particles{};
+    std::unordered_multimap<int, TLorentzVector> out_particles{};
+
+public:
+    event() {}
     ~event();
     double getQ2() const;
     double getW() const;
     void add_particle_in(int id, const TLorentzVector &p4);
     void add_particle_out(int id, const TLorentzVector &p4);
-    // const std::string &get_event_info();
-    std::size_t get_pi0_count() const;
-    std::size_t get_pip_count() const;
-    std::size_t get_pim_count() const;
-    std::size_t get_pions() const;
-    std::size_t get_count(int) const;
     bool is_good_event() const;
     std::pair<double, double> get_q2_w() const;
     double get_enu() const;
-    double get_p_mu() const;
-    double get_pt_mu() const;
-    double get_pl_mu() const;
-    double get_angle_mu() const;
     bool TKI_phase_cut() const;
     TLorentzVector get_leading_proton() const;
-    std::vector<TLorentzVector> & get_particle(int pdgid);
+    auto get_particle_out(int pdgid) { return eq_range{out_particles.equal_range(pdgid)}; }
+    auto get_particle_in(int pdgid) { return eq_range{in_particles.equal_range(pdgid)}; }
 };

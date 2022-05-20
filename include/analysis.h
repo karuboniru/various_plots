@@ -34,7 +34,7 @@ public:
         void add_event(event &e) {
             enu.Fill(e.get_enu());
             auto phase = e.TKI_phase_cut();
-            for (auto &p : e.get_particle(2212)) {
+            for (const auto &[_, p] : e.get_particle_out(2212)) {
                 protonE_nocut.Fill(p.E() - p.M());
                 protonP_nocut.Fill(p.P());
                 if (phase) {
@@ -89,25 +89,21 @@ public:
             p_all.add_event(e);
         }
         void finalize() {
-            // p_all.finalize_plot(xsec, thisrun.event_count);
-            {
-                std::cout << "xsec per thread" << xsec << std::endl;
-                // std::lock_guard<std::mutex> l(thisrun.run_lock);
-                thisrun.p_all.protonE.Add(&p_all.protonE);
-                thisrun.p_all.protonP.Add(&p_all.protonP);
-                thisrun.p_all.enu.Add(&p_all.enu);
-                thisrun.p_all.protonE_nocut.Add(&p_all.protonE_nocut);
-                thisrun.p_all.protonP_nocut.Add(&p_all.protonP_nocut);
-                thisrun.xsec += xsec;
-            }
+            thisrun.p_all.protonE.Add(&p_all.protonE);
+            thisrun.p_all.protonP.Add(&p_all.protonP);
+            thisrun.p_all.enu.Add(&p_all.enu);
+            thisrun.p_all.protonE_nocut.Add(&p_all.protonE_nocut);
+            thisrun.p_all.protonP_nocut.Add(&p_all.protonP_nocut);
+            thisrun.xsec += xsec;
         }
     };
     thread_object get_thread_object() {
-        // std::lock_guard lock(run_lock);
         return thread_object(*this);
     }
     void finalize() {
-        std::cout << "xsec: " << xsec << std::endl;
+        std::cout << event_count << " events processed" << std::endl;
+        std::cout << "averaged overall xsec = " << xsec << " [cm^2]"<< std::endl;
+
         p_all.protonE.Scale(xsec / event_count / bin_wid);
         p_all.protonP.Scale(xsec / event_count / bin_wid);
         p_all.enu.Scale(xsec / event_count / bin_wid);
