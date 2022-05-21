@@ -3,6 +3,7 @@ project(plotss)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 set(CMAKE_CXX_STANDARD 20)
+find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(ROOT REQUIRED)
 include("${ROOT_USE_FILE}")
 include_directories(
@@ -17,5 +18,5 @@ add_library(event STATIC src/event.cxx)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic")
 add_executable(plots main.cxx)
-target_link_libraries(plots ROOT::Tree ROOT::EG event)
+target_link_libraries(plots ROOT::Tree ROOT::EG event nlohmann_json::nlohmann_json)
 install(TARGETS plots DESTINATION bin)

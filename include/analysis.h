@@ -1,6 +1,8 @@
 #pragma once
 
 #include <TCanvas.h>
+#include <TF1.h>
+#include <TGraph.h>
 #include <TH1D.h>
 #include <TH2D.h>
 #include <TStyle.h>
@@ -22,9 +24,26 @@
 
 using std::string_literals::operator""s;
 
+double get_xsec(TH1 *h_rate, TGraph *spline) {
+    double fluxint{};
+    TF1 func(
+        "spline", [&spline](double *x, double *) { return spline->Eval(*x); }, 0, h_rate->GetXaxis()->GetXmax(), 0);
+    for (int ii = 1; ii <= h_rate->GetNbinsX(); ii++) {
+        double bin_c = h_rate->GetBinContent(ii);
+        double bin_up = h_rate->GetXaxis()->GetBinUpEdge(ii);
+        double bin_low = h_rate->GetXaxis()->GetBinLowEdge(ii);
+        double bin_width = bin_up - bin_low;
+        if (bin_c < 1 || func.Integral(bin_low, bin_up) == 0) {
+            continue;
+        }
+
+        fluxint += bin_c / func.Integral(bin_low, bin_up) * bin_width;
+    }
+    return h_rate->Integral() / fluxint;
+}
+
 class analysis {
 public:
-    double xsec{};
     constexpr static double pmin = 0, pmax = 20., bin_wid = 4e-3;
     constexpr static size_t bin_count = (pmax - pmin) / bin_wid;
     class plots {
@@ -46,11 +65,11 @@ public:
         plots()
             : protonE("protonE", "protonE", bin_count, pmin, pmax),                   //
               protonP("protonP", "protonP", bin_count, pmin, pmax),                   //
-              enu("enu", "enu", bin_count, pmin, pmax),                               //
+              enu("enu", "enu", bin_count, pmin, pmax),                               // aka. hccrate
               protonE_nocut("protonE_nocut", "protonE_nocut", bin_count, pmin, pmax), //
               protonP_nocut("protonP_nocut", "protonP_nocut", bin_count, pmin, pmax)  //
         {}
-    } p_all;
+    } plot;
 
 public:
     analysis(){};
@@ -61,18 +80,21 @@ public:
 class run_manager : public analysis {
 public:
     const size_t event_count{};
-    run_manager(size_t count) : event_count(count) {}
+    TGraph *sp;
+    run_manager(size_t count, TGraph *spline) : event_count(count), sp(spline) {}
     run_manager(const run_manager &) = delete;
-    run_manager(run_manager &&) { p_all = std::move(p_all); }
+    run_manager(run_manager &&) { plot = std::move(plot); }
     // std::mutex run_lock;
     class thread_object : public analysis {
     public:
         thread_object(const thread_object &) = default;
         thread_object(thread_object &&) = default;
         run_manager &thisrun;
-        double xsec{};
         thread_object(run_manager &run) : thisrun(run) {}
-        void run(auto &&StdHepN, auto &&StdHepPdg, auto &&StdHepStatus, auto &&StdHepP4, auto &&EvtWght) {
+        void run(auto &&StdHepN, auto &&StdHepPdg, auto &&StdHepStatus, auto &&StdHepP4, auto &&EvtCode) {
+            if (!EvtCode.GetString().Contains("Weak[CC]")) {
+                return;
+            }
             event e;
             for (int i = 0; i < StdHepN; ++i) {
                 auto pdg = StdHepPdg[i];
@@ -85,29 +107,25 @@ public:
                     e.add_particle_out(pdg, TLorentzVector(StdHepP4[i][0], StdHepP4[i][1], StdHepP4[i][2], StdHepP4[i][3]));
                 }
             }
-            xsec += EvtWght / thisrun.event_count * 1e-38;
-            p_all.add_event(e);
+            plot.add_event(e);
         }
         void finalize() {
-            thisrun.p_all.protonE.Add(&p_all.protonE);
-            thisrun.p_all.protonP.Add(&p_all.protonP);
-            thisrun.p_all.enu.Add(&p_all.enu);
-            thisrun.p_all.protonE_nocut.Add(&p_all.protonE_nocut);
-            thisrun.p_all.protonP_nocut.Add(&p_all.protonP_nocut);
-            thisrun.xsec += xsec;
+            thisrun.plot.protonE.Add(&plot.protonE);
+            thisrun.plot.protonP.Add(&plot.protonP);
+            thisrun.plot.enu.Add(&plot.enu);
+            thisrun.plot.protonE_nocut.Add(&plot.protonE_nocut);
+            thisrun.plot.protonP_nocut.Add(&plot.protonP_nocut);
         }
     };
-    thread_object get_thread_object() {
-        return thread_object(*this);
-    }
+    thread_object get_thread_object() { return thread_object(*this); }
     void finalize() {
         std::cout << event_count << " events processed" << std::endl;
-        std::cout << "averaged overall xsec = " << xsec << " [cm^2]"<< std::endl;
-
-        p_all.protonE.Scale(xsec / event_count / bin_wid);
-        p_all.protonP.Scale(xsec / event_count / bin_wid);
-        p_all.enu.Scale(xsec / event_count / bin_wid);
-        p_all.protonE_nocut.Scale(xsec / event_count / bin_wid);
-        p_all.protonP_nocut.Scale(xsec / event_count / bin_wid);
+        double xsec = get_xsec(&plot.enu, sp);
+        std::cout << "xsec = " << xsec << std::endl;
+        plot.protonE.Scale(xsec / event_count / bin_wid);
+        plot.protonP.Scale(xsec / event_count / bin_wid);
+        plot.enu.Scale(xsec / event_count / bin_wid);
+        plot.protonE_nocut.Scale(xsec / event_count / bin_wid);
+        plot.protonP_nocut.Scale(xsec / event_count / bin_wid);
     }
 };

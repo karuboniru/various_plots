@@ -47,9 +47,8 @@ void event::add_particle_out(int id, const TLorentzVector &p4) { out_particles.i
 std::pair<double, double> event::get_q2_w() const { return std::make_pair(getQ2(), getW()); }
 
 double event::get_enu() const {
-    assert(p4_neutrino.count(14) == 1);
+    assert(in_particles.count(14) == 1);
     const auto &p4_neutrino = in_particles.find(14)->second;
-    assert(p4_neutrino.size() == 1);
     return p4_neutrino.E();
 }
 
