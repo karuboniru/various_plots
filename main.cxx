@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
     auto &enu = instance.plot.enu;
     auto &protonE_nocut = instance.plot.protonE_nocut;
     auto &protonP_nocut = instance.plot.protonP_nocut;
+    auto &leadingP = instance.plot.leadingP;
+    auto &leadingP_nocut = instance.plot.leadingP_nocut;
     TFile f((output_prefix + ".root").c_str(), "RECREATE");
     // protonE.SaveAs((output_prefix + "_protonE.root").c_str());
     // protonP.SaveAs((output_prefix + "_protonP.root").c_str());
@@ -85,12 +87,16 @@ int main(int argc, char *argv[]) {
     enu.SetDirectory(&f);
     protonE_nocut.SetDirectory(&f);
     protonP_nocut.SetDirectory(&f);
+    leadingP.SetDirectory(&f);
+    leadingP_nocut.SetDirectory(&f);
     f.Write();
     protonE.SetDirectory(0);
     protonP.SetDirectory(0);
     enu.SetDirectory(0);
     protonE_nocut.SetDirectory(0);
     protonP_nocut.SetDirectory(0);
+    leadingP.SetDirectory(0);
+    leadingP_nocut.SetDirectory(0);
     f.Close();
 
     return 0;

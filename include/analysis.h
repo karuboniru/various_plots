@@ -50,9 +50,15 @@ public:
     public:
         TH1D protonE, protonP, enu;
         TH1D protonE_nocut, protonP_nocut;
+        TH1D leadingP, leadingP_nocut;
         void add_event(event &e) {
             enu.Fill(e.get_enu());
             auto phase = e.TKI_phase_cut();
+            auto p_leading_p = e.get_leading_proton();
+            leadingP_nocut.Fill(p_leading_p.P());
+            if (phase) {
+                leadingP.Fill(p_leading_p.P());
+            }
             for (const auto &[_, p] : e.get_particle_out(2212)) {
                 protonE_nocut.Fill(p.E() - p.M());
                 protonP_nocut.Fill(p.P());
@@ -67,8 +73,9 @@ public:
               protonP("protonP", "protonP", bin_count, pmin, pmax),                   //
               enu("enu", "enu", bin_count, pmin, pmax),                               // aka. hccrate
               protonE_nocut("protonE_nocut", "protonE_nocut", bin_count, pmin, pmax), //
-              protonP_nocut("protonP_nocut", "protonP_nocut", bin_count, pmin, pmax)  //
-        {}
+              protonP_nocut("protonP_nocut", "protonP_nocut", bin_count, pmin, pmax), //
+              leadingP("leadingP", "leadingP", bin_count, pmin, pmax),                //
+              leadingP_nocut("leadingP_nocut", "leadingP_nocut", bin_count, pmin, pmax) {}
     } plot;
 
 public:
@@ -115,6 +122,8 @@ public:
             thisrun.plot.enu.Add(&plot.enu);
             thisrun.plot.protonE_nocut.Add(&plot.protonE_nocut);
             thisrun.plot.protonP_nocut.Add(&plot.protonP_nocut);
+            thisrun.plot.leadingP.Add(&plot.leadingP);
+            thisrun.plot.leadingP_nocut.Add(&plot.leadingP_nocut);
         }
     };
     thread_object get_thread_object() { return thread_object(*this); }
@@ -127,5 +136,7 @@ public:
         plot.enu.Scale(xsec / event_count / bin_wid);
         plot.protonE_nocut.Scale(xsec / event_count / bin_wid);
         plot.protonP_nocut.Scale(xsec / event_count / bin_wid);
+        plot.leadingP.Scale(xsec / event_count / bin_wid);
+        plot.leadingP_nocut.Scale(xsec / event_count / bin_wid);
     }
 };
