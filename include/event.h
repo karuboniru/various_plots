@@ -33,4 +33,5 @@ public:
     TLorentzVector get_leading_proton() const;
     auto get_particle_out(int pdgid) { return eq_range{out_particles.equal_range(pdgid)}; }
     auto get_particle_in(int pdgid) { return eq_range{in_particles.equal_range(pdgid)}; }
+    size_t count_particle_out (int pdgid) const noexcept;
 };

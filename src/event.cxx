@@ -62,9 +62,11 @@ bool event::TKI_phase_cut() const {
     const auto leading_p4_proton = get_leading(out_particles, 2212);
     // ignore any proton cut
     // const auto p_proton = leading_p4_proton.P();
-    // const auto angle_proton = leading_p4_proton.Theta() * 180 / M_PI;
+    const auto angle_proton = leading_p4_proton.Theta() * 180 / M_PI;
     // return 1.5 < p_mu && p_mu < 20. && angle_mu < 25. && 0.45 < p_proton;
-    return 1.5 < p_mu && p_mu < 20. && angle_mu < 25.;
+    return 1.5 < p_mu && p_mu < 20. && angle_mu < 25. && angle_proton < 70;
 }
 
 TLorentzVector event::get_leading_proton() const { return get_leading(out_particles, 2212); }
+
+size_t event::count_particle_out(int pdgid) const noexcept { return out_particles.count(pdgid); }
