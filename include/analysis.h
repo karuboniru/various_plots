@@ -55,9 +55,11 @@ public:
             enu.Fill(e.get_enu());
             auto phase = e.TKI_phase_cut();
             auto p_leading_p = e.get_leading_proton();
-            leadingP_nocut.Fill(p_leading_p.P());
-            if (phase) {
-                leadingP.Fill(p_leading_p.P());
+            if (p_leading_p.P() > 1e-5) {
+                leadingP_nocut.Fill(p_leading_p.P());
+                if (phase) {
+                    leadingP.Fill(p_leading_p.P());
+                }
             }
             for (const auto &[_, p] : e.get_particle_out(2212)) {
                 protonE_nocut.Fill(p.E() - p.M());

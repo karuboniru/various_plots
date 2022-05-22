@@ -10,7 +10,7 @@ template <typename T> inline TLorentzVector get_sum(T &&cont, int pdgid) {
 
 template <typename T> inline TLorentzVector get_leading(T &&cont, int pdgid) {
     TLorentzVector max{};
-    double max_p{};
+    double max_p{-INFINITY};
     for (const auto &[id, p4] : eq_range{cont.equal_range(pdgid)}) {
         if (p4.P() > max_p) {
             max_p = p4.P();
