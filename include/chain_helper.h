@@ -115,43 +115,6 @@ public:
 
     decltype(auto) begin() { return iter(0, *this); }
     decltype(auto) end() { return iter(get_entries(), *this); }
-    // basically magic, but it works
-    // ROOT itself is not so multi-thread friendly...
-    // event-by-event parallelization is not a good idea...
-    // template <typename RunManager, typename... Args> RunManager run(size_t threads = 1, Args &&...args) {
-    //     RunManager run(args...);
-    //     // auto run_ptr = std::make_unique<RunManager>(std::forward<Args>(args)...);
-    //     // auto &run = *run_ptr;
-    //     std::deque<std::jthread> threads_pool;
-    //     std::mutex tree_read_mutex;
-    //     auto iter = begin();
-    //     for (size_t i = 0; i < threads; i++) {
-    //         threads_pool.emplace_back([&, i] {
-    //             auto thread_obj = run.get_thread_object();
-    //             while (true) {
-    //                 // std::tuple<branch_type ...> data{};
-    //                 std::function<void()> f{};
-    //                 {
-    //                     std::lock_guard<std::mutex> lock(tree_read_mutex);
-    //                     if (!(iter != end())) {
-    //                         break;
-    //                     }
-    //                     // auto data = std::apply([&](auto &&...args) { return std::tupe<branch_type...>(args...); }, *iter);
-    //                     f = std::apply([&](auto &&...args) { return std::bind([&](auto &&...args) { thread_obj.run(args...); }, args...); }, *iter);
-    //                     ++iter;
-    //                 }
-    //                 // std::apply([&](auto &&...args) { thread_obj.run(args...); }, data);
-    //                 f();
-    //             }
-    //             thread_obj.finalize();
-    //         });
-    //     }
-    //     for (auto &i : threads_pool) {
-    //         i.join();
-    //     }
-    //     run.finalize();
-    //     return run;
-    // }
 };
 
 template <typename... branch_type> class chain_runner {
@@ -161,10 +124,10 @@ private:
 
 public:
     template <typename T>
-    requires std::is_nothrow_convertible_v<typename std::remove_cvref_t<T>::value_type, std::string>
     chain_runner(T &&file_list, const char *tree_name, const std::array<const char *, sizeof...(branch_type)> names, size_t nthread_ = 16) {
         nthread = std::min(nthread_, file_list.size());
-        auto split_list = std::make_unique<std::vector<std::string>[]>(nthread);
+        std::vector<std::vector<std::string>> split_list;
+        split_list.resize(nthread);
         chains.reserve(nthread);
         for (size_t i = 0; i < file_list.size(); i++) {
             split_list[i % nthread].push_back(file_list[i]);

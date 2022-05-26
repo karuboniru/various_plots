@@ -42,7 +42,9 @@ double event::getW() const {
 
 void event::add_particle_in(int id, const TLorentzVector &p4) { in_particles.emplace(id, p4); }
 
-void event::add_particle_out(int id, const TLorentzVector &p4) { out_particles.insert({id, p4}); }
+void event::add_particle_out(int id, const TLorentzVector &p4) { out_particles.emplace(id, p4); }
+
+void event::add_particle_nofsi(int id, const TLorentzVector &p4) { nofsi_particles.emplace(id, p4); }
 
 std::pair<double, double> event::get_q2_w() const { return std::make_pair(getQ2(), getW()); }
 
@@ -52,7 +54,7 @@ double event::get_enu() const {
     return p4_neutrino.E();
 }
 
-bool event::TKI_phase_cut() const {
+bool event::TKI_mu_p_cut() const {
     if (out_particles.count(13) == 0 || out_particles.count(2212) == 0) {
         return false;
     }
@@ -70,3 +72,27 @@ bool event::TKI_phase_cut() const {
 TLorentzVector event::get_leading_proton() const { return get_leading(out_particles, 2212); }
 
 size_t event::count_particle_out(int pdgid) const noexcept { return out_particles.count(pdgid); }
+
+size_t event::count_particle_nofsi(int pdgid) const noexcept { return nofsi_particles.count(pdgid); }
+
+TLorentzVector event::get_leading_out(int pdgid) const { return get_leading(out_particles, pdgid); }
+
+TLorentzVector event::get_leading_nofsi(int pdgid) const { return get_leading(nofsi_particles, pdgid); }
+
+bool event::TKI_mu_cut() const {
+    if (out_particles.count(13) == 0 || out_particles.count(2212) == 0) {
+        return false;
+    }
+    const auto leading_p4_muon = get_leading(out_particles, 13);
+    const auto p_mu = leading_p4_muon.P();
+    const auto angle_mu = leading_p4_muon.Theta() * 180 / M_PI;
+    return 1.5 < p_mu && p_mu < 20. && angle_mu < 25.;
+}
+
+void event::set_mode(event::channel m) { mode = m; }
+
+event::channel event::get_mode() const { return mode; }
+
+void event::set_weight(double w) { weight = w; }
+
+double event::get_weight() const { return weight; }
