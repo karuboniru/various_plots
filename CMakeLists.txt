@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
-project(plotss)
+project(nuanalysis)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -17,6 +17,6 @@ add_library(event STATIC src/event.cxx)
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic")
-add_executable(plots main.cxx)
-target_link_libraries(plots ROOT::Tree ROOT::EG event nlohmann_json::nlohmann_json)
-install(TARGETS plots DESTINATION bin)
+add_executable(nuanalysis main.cxx)
+target_link_libraries(nuanalysis ROOT::Tree ROOT::EG event nlohmann_json::nlohmann_json)
+install(TARGETS nuanalysis DESTINATION bin)

@@ -35,7 +35,10 @@ int main(int argc, char *argv[]) {
         ifs >> config;
     }
     std::filesystem::path output_path = config["output_path"];
-    std::filesystem::create_directories(output_path.parent_path());
+    if (!output_path.parent_path().empty()) {
+        std::cout << "Creating output directory " << output_path.parent_path() << std::endl;
+        std::filesystem::create_directories(output_path.parent_path());
+    }
     analysis::plots instance;
     if (config["type"] == "genie") {
         instance = run_manager_genie::run_analysis(config).plot;
@@ -54,6 +57,7 @@ int main(int argc, char *argv[]) {
     //     hist->SetDirectory(0);
     // }
     // f.Close();
+    std::cout << "Writing to " << output_path << std::endl;
     instance.save(output_path);
 
     return 0;
