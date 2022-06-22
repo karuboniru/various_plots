@@ -102,9 +102,15 @@ public:
                  }
              }},
             {"enu", [](event &e, TH1D *h) { h->Fill(e.get_enu(), e.get_weight()); }},
-            {"kaonE", [](event &e, TH1D *h) {
+            {"kaonE",
+             [](event &e, TH1D *h) {
                  for (const auto &[_, p] : e.get_particle_out(321)) {
                      h->Fill(p.E() - p.M(), e.get_weight());
+                 }
+             }},
+            {"leadingPi0", [](event &e, TH1D *h) {
+                 if (e.count_particle_out(111)) {
+                     h->Fill(e.get_leading_out(111).P(), e.get_weight());
                  }
              }}};
         void add_event(event &e) {
@@ -150,14 +156,40 @@ public:
             }
             // add_cut("TKI", [](event &e) { return e.TKI_mu_cut(); });
             // add_cut("TKIp", [](event &e) { return e.TKI_mu_cut(); });
+            add_cut("mucut", [](event &e) { return e.get_leading_out(14).P() > 1.0; });
+            add_cut("epi", [](event &e) {
+                size_t count_e{}, count_pi{};
+                for (const auto &[id, p] : e.get_particle_out()) {
+                    if (id == -11) {
+                        count_e++;
+                    } else if (id == 111) {
+                        count_pi++;
+                    } else {
+                        return false;
+                    }
+                }
+                return (count_e == 1) && (count_pi == 1);
+            }); // for PDK final state
             add_cut_group({{"qe", [](event &e) { return e.get_mode() == event::channel::QE; }},
                            {"res", [](event &e) { return e.get_mode() == event::channel::RES; }},
                            {"dis", [](event &e) { return e.get_mode() == event::channel::DIS; }},
                            {"2p2h", [](event &e) { return e.get_mode() == event::channel::MEC; }}});
-            add_cut_group({{"1p", [](event &e) { return e.count_particle_out(2212) == 1; }},
-                           {"2p", [](event &e) { return e.count_particle_out(2212) == 2; }},
-                           {"0p", [](event &e) { return e.count_particle_out(2212) == 0; }},
-                           {"Mp", [](event &e) { return e.count_particle_out(2212) > 2; }}});
+            add_cut_group({{"1pi", [](event &e) { return e.count_particle_out(211) + e.count_particle_out(111) + e.count_particle_out(-211) == 1; }},
+                           {"2pi", [](event &e) { return e.count_particle_out(211) + e.count_particle_out(111) + e.count_particle_out(-211) == 2; }},
+                           {"0pi", [](event &e) { return e.count_particle_out(211) + e.count_particle_out(111) + e.count_particle_out(-211) == 0; }},
+                           {"Mpi", [](event &e) { return e.count_particle_out(211) + e.count_particle_out(111) + e.count_particle_out(-211) > 2; }},
+                           {"1pi0", [](event &e) { return e.count_particle_out(111) == 1; }},
+                           {"2pi0", [](event &e) { return e.count_particle_out(111) == 2; }},
+                           {"0pi0", [](event &e) { return e.count_particle_out(111) == 0; }},
+                           {"Mpi0", [](event &e) { return e.count_particle_out(111) > 2; }},
+                           {"1pip", [](event &e) { return e.count_particle_out(211) == 1; }},
+                           {"2pip", [](event &e) { return e.count_particle_out(211) == 2; }},
+                           {"0pip", [](event &e) { return e.count_particle_out(211) == 0; }},
+                           {"Mpip", [](event &e) { return e.count_particle_out(211) > 2; }},
+                           {"1pim", [](event &e) { return e.count_particle_out(-211) == 1; }},
+                           {"2pim", [](event &e) { return e.count_particle_out(-211) == 2; }},
+                           {"0pim", [](event &e) { return e.count_particle_out(-211) == 0; }},
+                           {"Mpim", [](event &e) { return e.count_particle_out(-211) > 2; }}});
         }
         void save(std::filesystem::path file_path) {
             // std::filesystem::create_directory(file_path.parent_path());
@@ -197,7 +229,7 @@ public:
     TH1D enu;
     run_manager_genie(size_t count, TGraph *spline) : event_count(count), sp(spline), enu("enu", "enu", bin_count, pmin, pmax) {}
     run_manager_genie(const run_manager_genie &) = delete;
-    run_manager_genie(run_manager_genie &&) { plot = std::move(plot); }
+    run_manager_genie(run_manager_genie &&lhs) = default;
     // std::mutex run_lock;
     class thread_object : public analysis {
     public:
@@ -210,6 +242,8 @@ public:
             if (!EvtCode.GetString().Contains("Weak[CC]")) {
                 return;
             } // focus on CC interactions
+            if (StdHepPdg[0] != 14)
+                return;
             event e;
             e.set_mode(get_mode_genie(EvtCode));
             for (int i = 0; i < StdHepN; ++i) {
@@ -286,7 +320,7 @@ public:
     double xsec{};
     run_manager_nuwro(size_t count) : event_count(count) {}
     run_manager_nuwro(const run_manager_nuwro &) = delete;
-    run_manager_nuwro(run_manager_nuwro &&) { plot = std::move(plot); }
+    run_manager_nuwro(run_manager_nuwro &&lhs) = default;
     // std::mutex run_lock;
     class thread_object : public analysis {
     public:
@@ -351,5 +385,81 @@ public:
     }
 };
 
+event::channel getmode_gibuu(int modeid) {
+    if (modeid == 1) {
+        return event::channel::QE;
+    } else if (modeid > 1 && modeid <= 33) {
+        return event::channel::RES;
+    } else if (modeid == 34) {
+        return event::channel::DIS;
+    } else if (modeid == 35) {
+        return event::channel::MEC;
+    }
+    return event::channel::Other;
+}
 
+class run_manager_gibuu : public analysis {
+public:
+    const size_t nrun{};
+    const int nupdg, nucpdg;
+    double xsec{};
+    run_manager_gibuu(size_t nrun, int nupdg, int nucpdg) : nrun(nrun), nupdg(nupdg), nucpdg(nucpdg) {}
+    run_manager_gibuu(const run_manager_gibuu &) = delete;
+    run_manager_gibuu(run_manager_gibuu &&lhs) = default;
+    // std::mutex run_lock;
+    class thread_object : public analysis {
+    public:
+        thread_object(const thread_object &) = default;
+        thread_object(thread_object &&) = default;
+        run_manager_gibuu &thisrun;
+        thread_object(run_manager_gibuu &run) : thisrun(run) {}
+        void run(auto &&weight, auto &&barcode, auto &&E, auto &&Px, auto &&Py, auto &&Pz, auto &&evType, auto &&lepIn_E, auto &&lepIn_Px, auto &&lepIn_Py,
+                 auto &&lepIn_Pz, auto &&lepOut_E, auto &&lepOut_Px, auto &&lepOut_Py, auto &&lepOut_Pz, auto &&nuc_E, auto &&nuc_Px, auto &&nuc_Py,
+                 auto &&nuc_Pz) {
+            event e;
+            e.set_weight(weight);
+            e.set_mode(getmode_gibuu(evType));
+            const auto size_o = E.size();
+            for (size_t i = 0; i < size_o; ++i) {
+                e.add_particle_out(barcode[i], TLorentzVector(Px[i], Py[i], Pz[i], E[i]));
+            }
+            e.add_particle_out(thisrun.nupdg > 0 ? thisrun.nupdg - 1 : thisrun.nupdg + 1, TLorentzVector(lepOut_Px, lepOut_Py, lepOut_Pz, lepOut_E));
+            e.add_particle_in(thisrun.nupdg, TLorentzVector(lepIn_Px, lepIn_Py, lepIn_Pz, lepIn_E));
+            e.add_particle_in(thisrun.nucpdg, TLorentzVector(nuc_Px, nuc_Py, nuc_Pz, nuc_E));
+            plot.add_event(e);
+        }
+        void finalize() {
+            // thisrun.enu.Add(&enu);
+            for (const auto &[name, hist] : plot.histos) {
+                thisrun.plot.histos[name]->Add(hist.get());
+            }
+        }
+    };
+    thread_object get_thread_object() { return thread_object(*this); }
+    void finalize() {
+        // std::cout << "averaged overall xsec = " << xsec << " [cm^2]" << std::endl;
 
+        // enu.Scale(xsec / event_count / bin_wid);
+        for (const auto &[name, hist] : plot.histos) {
+            hist->Scale(1. / nrun * 1e-38 / bin_wid);
+        }
+    }
+    static run_manager_gibuu run_analysis(nlohmann::json &config) {
+        // constexpr size_t MAX_COUNT = 128;
+        chain_runner<double,                                                                             // weight
+                     std::vector<int>,                                                                   // barcode. seems to be pdgcode
+                     std::vector<double>, std::vector<double>, std::vector<double>, std::vector<double>, // E, Px, Py, Pz
+                     int,                                                                                // evType
+                     double, double, double, double,                                                     // lepIn_E, lepIn_px, lepIn_py, lepIn_pz
+                     double, double, double, double,                                                     // lepOut_E, lepOut_px, lepOut_py, lepOut_pz
+                     double, double, double, double                                                      // nuc_E, nuc_px, nuc_py, nuc_pz
+                     >
+            chain(config["input_file_list"], "RootTuple",
+                  {"weight", "barcode", "E", "Px", "Py", "Pz", "evType", "lepIn_E", "lepIn_Px", "lepIn_Py", "lepIn_Pz", "lepOut_E", "lepOut_Px", "lepOut_Py",
+                   "lepOut_Pz", "nuc_E", "nuc_Px", "nuc_Py", "nuc_Pz"},
+                  std::thread::hardware_concurrency());
+
+        return chain.run<run_manager_gibuu>(config.value("nrun", config["input_file_list"].size()), config.value("nupdg", 14),
+                                            config.value("nucpdg", 1000060120));
+    }
+};

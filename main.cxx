@@ -44,6 +44,8 @@ int main(int argc, char *argv[]) {
         instance = run_manager_genie::run_analysis(config).plot;
     } else if (config["type"] == "nuwro") {
         instance = run_manager_nuwro::run_analysis(config).plot;
+    } else if (config["type"] == "gibuu") {
+        instance = run_manager_gibuu::run_analysis(config).plot;
     } else {
         std::cerr << "Unknown type: " << config["type"] << std::endl;
         return 1;

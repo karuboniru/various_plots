@@ -50,4 +50,7 @@ public:
     channel get_mode() const;
     void set_weight(double);
     double get_weight() const;
+    const std::unordered_multimap<int, TLorentzVector> &get_particle_out() const { return out_particles; };
+    const std::unordered_multimap<int, TLorentzVector> &get_particle_in() const { return in_particles; };
+    const std::unordered_multimap<int, TLorentzVector> &get_particle_nofsi() const { return nofsi_particles; };
 };
