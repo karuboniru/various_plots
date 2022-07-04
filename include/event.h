@@ -1,8 +1,9 @@
 #pragma once
 
-#include <TDatabasePDG.h>
+// #include <TDatabasePDG.h>
 #include <TLorentzVector.h>
 #include <map>
+#include <set>
 #include <vector>
 template <typename T> class eq_range {
 private:
@@ -21,9 +22,14 @@ public:
 private:
     std::unordered_multimap<int, TLorentzVector> in_particles{};
     std::unordered_multimap<int, TLorentzVector> out_particles{};
+    // std::set<int> pdg_list_out{};
+    std::map<int, size_t> pdg_list_out{};
     std::unordered_multimap<int, TLorentzVector> nofsi_particles{};
     double weight{1};
     channel mode;
+    // TDatabasePDG db{};
+    std::string channelname{};
+    std::string channelname_nonucleon{};
 
 public:
     event() {}
@@ -53,4 +59,7 @@ public:
     const std::unordered_multimap<int, TLorentzVector> &get_particle_out() const { return out_particles; };
     const std::unordered_multimap<int, TLorentzVector> &get_particle_in() const { return in_particles; };
     const std::unordered_multimap<int, TLorentzVector> &get_particle_nofsi() const { return nofsi_particles; };
+    size_t count_out(int) const noexcept;
+    const std::string & get_channelname();
+    const std::string & get_channelname_no_nucleon();
 };

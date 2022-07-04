@@ -18,5 +18,11 @@ add_library(event STATIC src/event.cxx)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic")
 add_executable(nuanalysis main.cxx)
+#target_compile_options(nuanalysis PUBLIC -pg)
+#target_link_options(nuanalysis PUBLIC -pg)
 target_link_libraries(nuanalysis ROOT::Tree ROOT::EG event nlohmann_json::nlohmann_json)
 install(TARGETS nuanalysis DESTINATION bin)
+
+add_executable(pdkanalysis pdkanalysis.cxx)
+target_link_libraries(pdkanalysis ROOT::Tree ROOT::EG event nlohmann_json::nlohmann_json)
+install(TARGETS pdkanalysis DESTINATION bin)

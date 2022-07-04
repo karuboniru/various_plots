@@ -1,4 +1,6 @@
+#include <cassert>
 #include <event.h>
+#include <sstream>
 
 template <typename T> inline TLorentzVector get_sum(T &&cont, int pdgid) {
     TLorentzVector sum{};
@@ -10,10 +12,10 @@ template <typename T> inline TLorentzVector get_sum(T &&cont, int pdgid) {
 
 template <typename T> inline TLorentzVector get_leading(T &&cont, int pdgid) {
     TLorentzVector max{};
-    double max_p{-INFINITY};
+    double max_E{-INFINITY};
     for (const auto &[id, p4] : eq_range{cont.equal_range(pdgid)}) {
-        if (p4.P() > max_p) {
-            max_p = p4.P();
+        if (p4.E() > max_E) {
+            max_E = p4.E();
             max = p4;
         }
     }
@@ -42,7 +44,11 @@ double event::getW() const {
 
 void event::add_particle_in(int id, const TLorentzVector &p4) { in_particles.emplace(id, p4); }
 
-void event::add_particle_out(int id, const TLorentzVector &p4) { out_particles.emplace(id, p4); }
+void event::add_particle_out(int id, const TLorentzVector &p4) {
+    out_particles.emplace(id, p4);
+    // pdg_list_out.insert(id);
+    pdg_list_out[id]++;
+}
 
 void event::add_particle_nofsi(int id, const TLorentzVector &p4) { nofsi_particles.emplace(id, p4); }
 
@@ -55,7 +61,7 @@ double event::get_enu() const {
 }
 
 bool event::TKI_mu_p_cut() const {
-    if (out_particles.count(13) == 0 || out_particles.count(2212) == 0) {
+    if (count_out(13) == 0 || count_out(2212) == 0) {
         return false;
     }
     const auto leading_p4_muon = get_leading(out_particles, 13);
@@ -71,7 +77,7 @@ bool event::TKI_mu_p_cut() const {
 
 TLorentzVector event::get_leading_proton() const { return get_leading(out_particles, 2212); }
 
-size_t event::count_particle_out(int pdgid) const noexcept { return out_particles.count(pdgid); }
+size_t event::count_particle_out(int pdgid) const noexcept { return count_out(pdgid); }
 
 size_t event::count_particle_nofsi(int pdgid) const noexcept { return nofsi_particles.count(pdgid); }
 
@@ -80,7 +86,7 @@ TLorentzVector event::get_leading_out(int pdgid) const { return get_leading(out_
 TLorentzVector event::get_leading_nofsi(int pdgid) const { return get_leading(nofsi_particles, pdgid); }
 
 bool event::TKI_mu_cut() const {
-    if (out_particles.count(13) == 0 || out_particles.count(2212) == 0) {
+    if (count_out(13) == 0 || count_out(2212) == 0) {
         return false;
     }
     const auto leading_p4_muon = get_leading(out_particles, 13);
@@ -96,3 +102,47 @@ event::channel event::get_mode() const { return mode; }
 void event::set_weight(double w) { weight = w; }
 
 double event::get_weight() const { return weight; }
+
+size_t event::count_out(int id) const noexcept {
+    auto it = pdg_list_out.find(id);
+    if (it == pdg_list_out.end()) {
+        return 0;
+    }
+    return it->second;
+}
+
+#include <TDatabasePDG.h>
+const std::string &event::get_channelname() {
+    if (!channelname.empty())
+        return channelname;
+    std::stringstream ss{};
+    thread_local TDatabasePDG db{};
+    for (const auto &[id, count] : pdg_list_out) {
+        if (count > 1) {
+            ss << count;
+        }
+        ss << db.GetParticle(id)->GetName() << " ";
+    }
+    channelname = ss.str();
+    channelname = channelname.substr(0, channelname.size() - 1);
+    return channelname;
+}
+
+const std::string &event::get_channelname_no_nucleon() {
+    if (!channelname_nonucleon.empty())
+        return channelname_nonucleon;
+    std::stringstream ss{};
+    thread_local TDatabasePDG db{};
+    for (const auto &[id, count] : pdg_list_out) {
+        if (id == 2212 || id == 2112) {
+            continue;
+        }
+        if (count > 1) {
+            ss << count;
+        }
+        ss << db.GetParticle(id)->GetName() << " ";
+    }
+    channelname_nonucleon = ss.str();
+    channelname_nonucleon = channelname_nonucleon.substr(0, channelname_nonucleon.size() - 1);
+    return channelname_nonucleon;
+}

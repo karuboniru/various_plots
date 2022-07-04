@@ -39,13 +39,75 @@ int main(int argc, char *argv[]) {
         std::cout << "Creating output directory " << output_path.parent_path() << std::endl;
         std::filesystem::create_directories(output_path.parent_path());
     }
-    analysis::plots instance;
+    // analysis::plots instance;
+    std::initializer_list<analysis::plots::cut_group_t> cut_group{
+        {{"qe", [](event &e) { return e.get_mode() == event::channel::QE; }},
+         {"res", [](event &e) { return e.get_mode() == event::channel::RES; }},
+         {"dis", [](event &e) { return e.get_mode() == event::channel::DIS; }},
+         {"2p2h", [](event &e) { return e.get_mode() == event::channel::MEC; }}},
+        {{"0pi", [](event &e) { return e.count_out(211) == 0 && e.count_out(-211) == 0 && e.count_out(111) == 0; }},
+         {"1pip", [](event &e) { return e.count_out(211) == 1 && e.count_out(111) == 0 && e.count_out(-211) == 0; }},
+         {"1pim", [](event &e) { return e.count_out(-211) == 1 && e.count_out(111) == 0 && e.count_out(211) == 0; }},
+         {"1pi0", [](event &e) { return e.count_out(211) == 0 && e.count_out(111) == 1 && e.count_out(-211) == 0; }},
+         {"1pi", [](event &e) { return e.count_out(211) + e.count_out(-211) + e.count_out(111) == 1; }},
+         {"mpi", [](event &e) { return e.count_out(211) > 0 && e.count_out(111) > 0; }}},
+        {{"with_spe", [](event &e) { return e.get_mode() == event::channel::QE && e.get_particle_nofsi().size() == 3; }},
+         {"without_spe", [](event &e) { return e.get_mode() == event::channel::QE && e.get_particle_nofsi().size() != 3; }}}};
+    // std::initializer_list<analysis::plots::cut_t> cuts{{"mucut", [](event &e) { return e.get_leading_out(14).P() > 1.0; }}};
+    std::initializer_list<analysis::plots::cut_t> cuts{};
+    std::initializer_list<analysis::plots::analysis_funcs_t> analysis_funcs{{"protonP",
+                                                                             [](event &e, TH1 *h) {
+                                                                                 for (const auto &[_, p] : e.get_particle_out(2212)) {
+                                                                                     h->Fill(p.P(), e.get_weight());
+                                                                                 }
+                                                                             }}, // proton momentum (particle by particle)
+                                                                            {"leadingP",
+                                                                             [](event &e, TH1 *h) {
+                                                                                 if (e.count_particle_out(2212)) {
+                                                                                     h->Fill(e.get_leading_proton().P(), e.get_weight());
+                                                                                 }
+                                                                             }}, // leading proton momentum (event by event), no cut
+                                                                            {"muonP",
+                                                                             [](event &e, TH1 *h) {
+                                                                                 if (e.count_particle_out(13)) {
+                                                                                     h->Fill(e.get_leading_out(13).P(), e.get_weight());
+                                                                                 }
+                                                                             }},
+                                                                            {"sum_of_ke_P",
+                                                                             [](event &e, TH1 *h) {
+                                                                                 if (e.count_particle_out(2212)) {
+                                                                                     double p_sum{};
+                                                                                     for (const auto &[_, p] : e.get_particle_out(2212)) {
+                                                                                         p_sum += p.E() - p.M();
+                                                                                     }
+                                                                                     h->Fill(p_sum, e.get_weight());
+                                                                                 }
+                                                                             }},
+                                                                            {"protonP_nofsi",
+                                                                             [](event &e, TH1 *h) {
+                                                                                 for (const auto &[_, p] : e.get_particle_nofsi(2212)) {
+                                                                                     if (p.P() != 0)
+                                                                                         h->Fill(p.P(), e.get_weight());
+                                                                                 }
+                                                                             }},
+                                                                            {"leadingP_nofsi",
+                                                                             [](event &e, TH1 *h) {
+                                                                                 if (e.count_particle_nofsi(2212)) {
+                                                                                     h->Fill(e.get_leading_nofsi(2212).P(), e.get_weight());
+                                                                                 }
+                                                                             }},
+                                                                            {"enu", [](event &e, TH1 *h) { h->Fill(e.get_enu(), e.get_weight()); }},
+                                                                            {"kaonE", [](event &e, TH1 *h) {
+                                                                                 for (const auto &[_, p] : e.get_particle_out(321)) {
+                                                                                     h->Fill(p.E() - p.M(), e.get_weight());
+                                                                                 }
+                                                                             }}};
     if (config["type"] == "genie") {
-        instance = run_manager_genie::run_analysis(config).plot;
+        run_manager_genie::run_analysis(config, analysis_funcs, cut_group, cuts).plot.save(output_path);
     } else if (config["type"] == "nuwro") {
-        instance = run_manager_nuwro::run_analysis(config).plot;
+        run_manager_nuwro::run_analysis(config, analysis_funcs, cut_group, cuts).plot.save(output_path);
     } else if (config["type"] == "gibuu") {
-        instance = run_manager_gibuu::run_analysis(config).plot;
+        run_manager_gibuu::run_analysis(config, analysis_funcs, cut_group, cuts).plot.save(output_path);
     } else {
         std::cerr << "Unknown type: " << config["type"] << std::endl;
         return 1;
@@ -59,8 +121,8 @@ int main(int argc, char *argv[]) {
     //     hist->SetDirectory(0);
     // }
     // f.Close();
-    std::cout << "Writing to " << output_path << std::endl;
-    instance.save(output_path);
+    // std::cout << "Writing to " << output_path << std::endl;
+    // instance.save(output_path);
 
     return 0;
 }
