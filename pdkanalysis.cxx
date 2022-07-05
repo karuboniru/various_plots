@@ -190,6 +190,11 @@ int main(int argc, char *argv[]) {
              auto &&particle = e.get_particle_in().find(1000060120)->second;
              dynamic_cast<TH2D *>(h)->Fill(particle.E(), particle.P(), e.get_weight());
          }},
+        {"2ddeltaE_v_mom",
+         [](event &e, TH1 *h) {
+             auto &&particle = e.get_particle_in().find(1000060120)->second;
+             dynamic_cast<TH2D *>(h)->Fill(-particle.E() + sqrt(particle.P() * particle.P() + 0.953 * 0.953), particle.P(), e.get_weight());
+         }},
         {"2dep_epi",
          [](event &e, TH1 *h) {
              if (e.count_particle_out(-11) && e.count_particle_out(111)) {
