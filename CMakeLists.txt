@@ -26,3 +26,7 @@ install(TARGETS nuanalysis DESTINATION bin)
 add_executable(pdkanalysis pdkanalysis.cxx)
 target_link_libraries(pdkanalysis ROOT::Tree ROOT::EG event nlohmann_json::nlohmann_json)
 install(TARGETS pdkanalysis DESTINATION bin)
+
+add_executable(pdkana_nuk pdkana_nuk.cxx)
+target_link_libraries(pdkana_nuk ROOT::Tree ROOT::EG event nlohmann_json::nlohmann_json)
+install(TARGETS pdkana_nuk DESTINATION bin)
