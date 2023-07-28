@@ -11,22 +11,26 @@ template <typename T> inline TLorentzVector get_sum(T &&cont, int pdgid) {
 }
 
 template <typename T> inline TLorentzVector get_leading(T &&cont, int pdgid) {
-  TLorentzVector max{};
+  const TLorentzVector *max{nullptr};
   double max_E{-INFINITY};
   for (const auto &[id, p4] : eq_range{cont.equal_range(pdgid)}) {
     if (p4.E() > max_E) {
       max_E = p4.E();
-      max = p4;
+      max = &p4;
     }
   }
-  return max;
+  if(max){
+    return *max;
+  } else {
+    return TLorentzVector{};
+  }
 }
 
 event::~event() {}
 
 double event::getQ2() const {
   // const auto &p4_muon = out_particles.at(13);
-  const auto &p4_muon = get_leading(out_particles, 13);
+  const auto &p4_muon = primarylepton;
   const auto &p4_neutrino = in_particles.find(14)->second;
   auto q = p4_muon - p4_neutrino;
   return -q.M2();
@@ -34,11 +38,19 @@ double event::getQ2() const {
 
 double event::getW() const {
   TLorentzVector p_final_state{};
-  for (const auto &[pdgid, p4v] : out_particles) {
-    if (pdgid != 13) {
-      p_final_state += p4v;
-    }
+  for (const auto &[pdgid, p4v] : in_particles) {
+    p_final_state += p4v;
   }
+  p_final_state -= primarylepton;
+  return p_final_state.M();
+}
+
+double event::getW_nofsi() const {
+  TLorentzVector p_final_state{};
+  for (const auto &[pdgid, p4v] : nofsi_particles) {
+    p_final_state += p4v;
+  }
+  p_final_state -= primarylepton;
   return p_final_state.M();
 }
 
@@ -50,6 +62,11 @@ void event::add_particle_out(int id, const TLorentzVector &p4) {
   out_particles.emplace(id, p4);
   // pdg_list_out.insert(id);
   pdg_list_out[id]++;
+  if ((!found_lepton) && id == 13) {
+    primarylepton = p4;
+    found_lepton = true;
+  }
+  out_count++;
 }
 
 void event::add_particle_nofsi(int id, const TLorentzVector &p4) {
@@ -137,14 +154,9 @@ bool event::is_true_elastic() const {
   return !(m_nod[5] || m_nod[6] || m_nod[7] || m_nod[8]);
 }
 
-const std::array<int, 18> &event::get_nod() const
-{
-    return m_nod;
-}
+const std::array<int, 18> &event::get_nod() const { return m_nod; }
 
-int event::get_pion_interaction_count() const{
-  return m_nod[4] + m_nod[5];
-}
+int event::get_pion_interaction_count() const { return m_nod[4] + m_nod[5]; }
 
 #include <TDatabasePDG.h>
 const std::string &event::get_channelname() {
@@ -168,6 +180,7 @@ const std::string &event::get_channelname_no_nucleon() {
     return channelname_nonucleon;
   std::stringstream ss{};
   thread_local TDatabasePDG db{};
+  // auto & db = * TDatabasePDG::Instance();
   for (const auto &[id, count] : pdg_list_out) {
     if (id == 2212 || id == 2112) {
       continue;
@@ -181,4 +194,19 @@ const std::string &event::get_channelname_no_nucleon() {
   channelname_nonucleon =
       channelname_nonucleon.substr(0, channelname_nonucleon.size() - 1);
   return channelname_nonucleon;
+}
+
+double event::W_rest() const {
+  constexpr double m_p = 0.938272;
+  TLorentzVector dummyp{0., 0, 0, m_p};
+  auto p4_neutrino = in_particles.find(14)->second;
+  auto lvq = p4_neutrino - primarylepton;
+  return (lvq + dummyp).M();
+
+  // return std::sqrt(m_p2 + 2 * m_p * (get_enu() - e_mu) - getQ2());
+}
+
+TLorentzVector event::get_lvq() const {
+  auto p4_neutrino = in_particles.find(14)->second;
+  return p4_neutrino - primarylepton;
 }

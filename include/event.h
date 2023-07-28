@@ -5,6 +5,7 @@
 #include <array>
 #include <map>
 #include <set>
+#include <type_traits>
 #include <vector>
 template <typename T> class eq_range {
 private:
@@ -15,7 +16,7 @@ public:
   decltype(auto) begin() { return pair.first; };
   decltype(auto) end() { return pair.second; };
 };
-template <typename T_> eq_range(T_ &&) -> eq_range<std::remove_cvref_t<T_>>;
+template <typename T_> eq_range(T_ &&) -> eq_range<std::remove_reference_t<T_>>;
 class event {
 public:
   enum class channel { QE, RES, DIS, MEC, Other };
@@ -23,6 +24,7 @@ public:
 private:
   std::unordered_multimap<int, TLorentzVector> in_particles{};
   std::unordered_multimap<int, TLorentzVector> out_particles{};
+  size_t out_count{};
   // std::set<int> pdg_list_out{};
   std::map<int, size_t> pdg_list_out{};
   std::unordered_multimap<int, TLorentzVector> nofsi_particles{};
@@ -52,7 +54,9 @@ private:
                                ///< 16 - hyperon Lambda -> Sigma conversion,
                                ///< 17 - hyperon Sigma -> Lambda conversion,
   TLorentzVector primaryP{}, spectatorP{};
+  TLorentzVector primarylepton{};
   bool is_spectator{false};
+  bool found_lepton{false};
 
 public:
   event() {}
@@ -62,6 +66,7 @@ public:
     spectatorP = p;
     is_spectator = true;
   }
+  size_t get_out_count() const { return out_count; }
   const TLorentzVector &getprimaryP() const { return primaryP; }
   const TLorentzVector &getspectatorP() const { return spectatorP; }
   bool is_spectator_event() const { return is_spectator; }
@@ -111,4 +116,9 @@ public:
   bool is_true_elastic() const;
   const std::array<int, 18> &get_nod() const;
   int get_pion_interaction_count() const;
+  double getW_nofsi() const;
+  void setPrimaryLepton(const TLorentzVector &p) { primarylepton = p; }
+  const TLorentzVector & getPrimaryLepton() { return primarylepton; }
+  double W_rest() const;
+  TLorentzVector get_lvq() const;
 };
