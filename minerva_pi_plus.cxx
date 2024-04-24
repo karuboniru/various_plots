@@ -1,4 +1,5 @@
 #include <ROOT/RDF/RInterface.hxx>
+#include <ROOT/RDFHelpers.hxx>
 #include <ROOT/RDataFrame.hxx>
 #include <TLorentzVector.h>
 #include <TMatrix.h>
@@ -44,6 +45,7 @@ int main(int argc, const char **argv) {
     names.push_back(name);
   }
   ROOT::RDataFrame d("nRooTracker", names);
+  ROOT::RDF::Experimental::AddProgressBar(d);
   // double count1 = d.Count().GetValue();
   auto dataset =
       d.Filter(
@@ -108,6 +110,18 @@ int main(int argc, const char **argv) {
   // https://journals.aps.org/prd/abstract/1.1103/PhysRevD.92.092008
   auto xsec = dataset.Mean("EvtWght").GetValue();
   auto count = dataset.Count().GetValue();
+  try {
+    dataset = dataset.Redefine("W", [](double W) { return W / 1000.; }, {"W"})
+                  .Redefine("Q2", [](double Q2) { return Q2 / 1e6; }, {"Q2"});
+  } catch (...) {
+    std::cerr << "failed to redefine W" << std::endl;
+  }
+  // try {
+  //   dataset =
+  //       dataset.Define("W", [](event &e) { return e.getW_nofsi(); }, {"event"})
+  //           .Define("Q2", [](event &e) { return e.getQ2(); }, {"event"});
+  // } catch (...) {
+  // }
   auto dataset_cut =
       dataset
           // .Filter(
@@ -161,8 +175,8 @@ int main(int argc, const char **argv) {
                return pion_angle;
              },
              {"pion_mom"})
-          .Define("W", [](event &e) { return e.getW_nofsi(); }, {"event"})
-          .Define("Q2", [](event &e) { return e.getQ2(); }, {"event"})
+          // .Define("W", [](event &e) { return e.getW_nofsi(); }, {"event"})
+          // .Define("Q2", [](event &e) { return e.getQ2(); }, {"event"})
           .Define("mp", [](event &e) { return e.getQ2(); }, {"event"})
           .Define("xbj",
                   [](ROOT::RVec<double> &StdHepP4_, double W, double Q2) {
@@ -389,13 +403,75 @@ int main(int argc, const char **argv) {
                         .Histo1D({"h_theta_nobinning_H", "h_theta_nobinning_H",
                                   500, 0, 180.},
                                  "pion_angle"))
-      ->Scale(xsec / count * 1e3 * 13, "WIDTH");
+      ->Scale(xsec / count * 1e4, "WIDTH");
   objs_list
       .emplace_back(
           dataset_cut.Filter("StdHepPdg[1] == 2212")
               .Histo1D({"h_Tk_nobinning_H", "h_Tk_nobinning_H", 500, 0, 700.},
                        "pion_Tk"))
-      ->Scale(xsec / count * 1e3 * 13, "WIDTH");
+      ->Scale(xsec / count * 1e4, "WIDTH");
+
+  const double Wfactor = 1e-38;
+  objs_list
+      .emplace_back(
+          dataset_cut.Histo1D({"Wtrue_all", "Wtrue_all", 500, .8, 3.}, "W"))
+      ->Scale(xsec / count * Wfactor, "WIDTH");
+
+  auto dataset_hydrogen = dataset_cut.Filter(
+      [](ROOT::RVec<int> &StdHepPdg) { return StdHepPdg[1] == 2212; },
+      {"StdHepPdg"});
+  objs_list
+      .emplace_back(dataset_hydrogen.Histo1D(
+          {"Wtrue_hydrogen", "Wtrue_hydrogen", 500, .8, 3.}, "W"))
+      ->Scale(xsec / count * Wfactor, "WIDTH");
+
+  objs_list
+      .emplace_back(dataset_hydrogen
+                        .Filter(
+                            [](const event &e, int flag_delta, double W) {
+                              return e.get_mode() == event::channel::RES &&
+                                     (flag_delta || W <= 1.210);
+                            },
+                            {"event", "flag_delta", "W"})
+                        .Histo1D({"Wtrue_hydrogen_res", "Wtrue_hydrogen_res",
+                                  500, .8, 3.},
+                                 "W"))
+      ->Scale(xsec / count * Wfactor, "WIDTH");
+
+  objs_list
+      .emplace_back(
+          dataset_cut
+              .Filter(
+                  [](const event &e) {
+                    return e.get_mode() != event::channel::RES &&
+                           e.get_mode() != event::channel::DIS;
+                  },
+                  {"event"})
+              .Histo1D({"Wtrue_nonres", "Wtrue_nonres", 500, .8, 3.}, "W"))
+      ->Scale(xsec / count * Wfactor, "WIDTH");
+
+  objs_list
+      .emplace_back(
+          dataset_cut
+              .Filter(
+                  [](const event &e) {
+                    return e.get_mode() == event::channel::RES ||
+                           e.get_mode() == event::channel::DIS;
+                  },
+                  {"event"})
+              .Histo1D({"Wtrue_resdis", "Wtrue_resdis", 500, .8, 3.}, "W"))
+      ->Scale(xsec / count * Wfactor, "WIDTH");
+
+  objs_list
+      .emplace_back(dataset_cut
+                        .Filter(
+                            [](const event &e, int flag_delta, double W) {
+                              return e.get_mode() == event::channel::RES &&
+                                     (flag_delta || W <= 1.210);
+                            },
+                            {"event", "flag_delta", "W"})
+                        .Histo1D({"Wtrue_res", "Wtrue_res", 500, .8, 3.}, "W"))
+      ->Scale(xsec / count * Wfactor, "WIDTH");
 
   save(objs_list, file);
   std::cout << "chi2_Tk = " << chi2_Tk << std::endl;

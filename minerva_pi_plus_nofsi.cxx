@@ -1,5 +1,6 @@
 #include <ROOT/RDF/RInterface.hxx>
 #include <ROOT/RDataFrame.hxx>
+#include <ROOT/RDFHelpers.hxx>
 #include <TLorentzVector.h>
 #include <TMatrix.h>
 #include <TMatrixT.h>
@@ -44,6 +45,7 @@ int main(int argc, const char **argv) {
     names.push_back(name);
   }
   ROOT::RDataFrame d("nRooTracker", names);
+  ROOT::RDF::Experimental::AddProgressBar(d);
   // double count1 = d.Count().GetValue();
   auto dataset =
       d.Filter(
@@ -109,6 +111,12 @@ int main(int argc, const char **argv) {
   // https://journals.aps.org/prd/abstract/1.1103/PhysRevD.92.092008
   auto xsec = dataset.Mean("EvtWght").GetValue();
   auto count = dataset.Count().GetValue();
+  try {
+    dataset =
+        dataset.Define("W", [](event &e) { return e.getW_nofsi(); }, {"event"})
+            .Define("Q2", [](event &e) { return e.getQ2(); }, {"event"});
+  } catch (...) {
+  }
   auto dataset_cut =
       dataset
           // .Filter(

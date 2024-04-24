@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 project(nuanalysis)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 # add_compile_options(-fconcepts)
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(ROOT REQUIRED)
@@ -77,6 +77,15 @@ add_executable(genie_proton genie_proton.cxx)
 target_link_libraries(genie_proton ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
 install(TARGETS genie_proton DESTINATION bin)
 
-add_executable(trace_particle trace_particle.cxx)
-target_link_libraries(trace_particle ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
-install(TARGETS trace_particle DESTINATION bin)
+# add_executable(trace_particle trace_particle.cxx)
+# target_link_libraries(trace_particle ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
+# install(TARGETS trace_particle DESTINATION bin)
+
+add_executable(TKI_2D_plot TKI_2D_plot.cxx)
+target_link_libraries(TKI_2D_plot ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
+install(TARGETS TKI_2D_plot DESTINATION bin)
+
+add_executable(TKI_W TKI_W.cxx)
+target_link_libraries(TKI_W ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
+install(TARGETS TKI_W DESTINATION bin)
+
