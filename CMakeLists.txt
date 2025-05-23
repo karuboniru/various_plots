@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 23)
 # add_compile_options(-fconcepts)
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(ROOT REQUIRED)
-include("${ROOT_USE_FILE}")
+# include("${ROOT_USE_FILE}")
 include_directories(
     ${ROOT_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18,7 +18,7 @@ add_library(tools STATIC src/tools.cxx)
 # add_library(analysis_plot STATIC src/analysis_plot.cxx)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic -flto -fconcepts")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Wextra -Wpedantic -flto=thin")
 
 add_executable(rdf-rho rdf-rho.cxx)
 target_link_libraries(rdf-rho ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
@@ -89,3 +89,15 @@ add_executable(TKI_W TKI_W.cxx)
 target_link_libraries(TKI_W ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
 install(TARGETS TKI_W DESTINATION bin)
 
+
+add_executable(microboonepi0 microboonepi0.cxx)
+target_link_libraries(microboonepi0 ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
+install(TARGETS microboonepi0 DESTINATION bin)
+
+add_executable(microboonepi0_angle microboonepi0_angle.cxx)
+target_link_libraries(microboonepi0_angle ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
+install(TARGETS microboonepi0_angle DESTINATION bin)
+
+add_executable(nuwroxsec nuwroxsec.cxx)
+target_link_libraries(nuwroxsec ROOT::Tree ROOT::EG ROOT::ROOTDataFrame event tools nlohmann_json::nlohmann_json)
+install(TARGETS nuwroxsec DESTINATION bin)

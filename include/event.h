@@ -81,13 +81,13 @@ public:
   TLorentzVector get_leading_proton() const;
   TLorentzVector get_leading_out(int) const;
   TLorentzVector get_leading_nofsi(int) const;
-  auto get_particle_out(int pdgid) {
+  auto get_particle_out(int pdgid) const {
     return eq_range{out_particles.equal_range(pdgid)};
   }
-  auto get_particle_in(int pdgid) {
+  auto get_particle_in(int pdgid) const {
     return eq_range{in_particles.equal_range(pdgid)};
   }
-  auto get_particle_nofsi(int pdgid) {
+  auto get_particle_nofsi(int pdgid) const {
     return eq_range{nofsi_particles.equal_range(pdgid)};
   }
   size_t count_particle_out(int pdgid) const noexcept;
@@ -118,7 +118,8 @@ public:
   int get_pion_interaction_count() const;
   double getW_nofsi() const;
   void setPrimaryLepton(const TLorentzVector &p) { primarylepton = p; }
-  const TLorentzVector & getPrimaryLepton() { return primarylepton; }
+  const TLorentzVector &getPrimaryLepton() { return primarylepton; }
   double W_rest() const;
   TLorentzVector get_lvq() const;
+  const std::map<int, size_t> &get_pdg_list_out() const { return pdg_list_out; }
 };

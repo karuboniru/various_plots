@@ -118,7 +118,8 @@ int main(int argc, const char **argv) {
   }
   // try {
   //   dataset =
-  //       dataset.Define("W", [](event &e) { return e.getW_nofsi(); }, {"event"})
+  //       dataset.Define("W", [](event &e) { return e.getW_nofsi(); },
+  //       {"event"})
   //           .Define("Q2", [](event &e) { return e.getQ2(); }, {"event"});
   // } catch (...) {
   // }
@@ -229,34 +230,27 @@ int main(int argc, const char **argv) {
             << "from " << count << " events" << std::endl;
   // Tk bins: 35–55 55–75 75–100 100–125 125–150 150–200 200–350
   const double Tk_bin_edges[]{35, 55, 75, 100, 125, 150, 200, 350};
-  const double Tk_bin_minerva[]{1.13, 1.16, 1.07, .85, .76, .66, .38};
-  const double Tk_bin_minerva_error[]{.30, .25, .20, .15, .14, .11, .08};
-  const double Tk_bin_minerva_error_shape[]{.20, .12, .09, .06, .05, .05, .04};
+  const double Tk_bin_minerva[]{.12e1, .13e1, .12e1, .09e1,
+                                .08e1, .07e1, .04e1};
+  const double Tk_bin_minerva_error[]{.26, .21, .18, .17, .18, .17, .22};
   // constexpr double bins_TK = 7;
   const double cov_TK[7][7]{
-      {1, .74, .72, .68, .68, .59, .56}, {.74, 1, .87, .82, .81, .72, .70},
-      {.72, .87, 1, .85, .84, .76, .71}, {.68, .82, .85, 1, .88, .83, .79},
-      {.68, .81, .84, .88, 1, .84, .81}, {.59, .72, .76, .83, .84, 1, .89},
-      {.56, .70, .71, .79, .81, .89, 1}};
-
-  const double cov_TK_shape[7][7]{{1, .29, .20, .01, -.02, -.30, -.36},
-                                  {.29, 1, .39, .09, .02, -.4, -.47},
-                                  {.20, .39, 1, .21, .13, -.22, -.53},
-                                  {.01, .09, .21, 1, .25, .01, -.31},
-                                  {-.02, .02, .13, .25, 1, .05, -.21},
-                                  {-.30, -.4, -.22, .01, .05, 1, .27},
-                                  {-.36, -.47, -.53, -.31, -.21, .27, 1}};
+      {1.0000, 0.7178, 0.6969, 0.6691, 0.6598, 0.5719, 0.5313},
+      {0.7178, 1.0000, 0.8679, 0.8090, 0.7962, 0.6995, 0.6617},
+      {0.6969, 0.8679, 1.0000, 0.8266, 0.8137, 0.7249, 0.6626},
+      {0.6691, 0.8090, 0.8266, 1.0000, 0.8823, 0.8166, 0.7830},
+      {0.6598, 0.7962, 0.8137, 0.8823, 1.0000, 0.8295, 0.8024},
+      {0.5719, 0.6995, 0.7249, 0.8166, 0.8295, 1.0000, 0.8985},
+      {0.5313, 0.6617, 0.6626, 0.7830, 0.8024, 0.8985, 1.0000}};
 
   // double full_error_matrix_TK[7][7];
   TMatrixT<double> full_error_matrix_TK(7, 7);
-  TMatrixT<double> full_error_matrix_TK_shape(7, 7);
+  // TMatrixT<double> full_error_matrix_TK_shape(7, 7);
   for (int i = 0; i < 7; ++i) {
     for (int j = 0; j < 7; ++j) {
-      full_error_matrix_TK[i][j] =
-          cov_TK[i][j] * Tk_bin_minerva_error[i] * Tk_bin_minerva_error[j];
-      full_error_matrix_TK_shape[i][j] = cov_TK_shape[i][j] *
-                                         Tk_bin_minerva_error_shape[i] *
-                                         Tk_bin_minerva_error_shape[j];
+      full_error_matrix_TK[i][j] = cov_TK[i][j] * Tk_bin_minerva_error[i] *
+                                   Tk_bin_minerva_error[j] * Tk_bin_minerva[j] *
+                                   Tk_bin_minerva[j];
     }
   }
 
@@ -267,80 +261,66 @@ int main(int argc, const char **argv) {
   TH1D h_Tk_data("h_Tk_data", "h_Tk_data", 7, Tk_bin_edges);
   for (int i = 0; i < 7; ++i) {
     h_Tk_data.SetBinContent(i + 1, Tk_bin_minerva[i]);
-    h_Tk_data.SetBinError(i + 1, Tk_bin_minerva_error[i]);
+    h_Tk_data.SetBinError(i + 1, Tk_bin_minerva_error[i] * Tk_bin_minerva[i]);
   }
   // theta bins: 0–15 15–22 22–29 29–36 36–43 43–50 50–57 57–72 72–108 108–130
   // 130–140 140–150 150–165
-  const double theta_bin_edges[]{0,  15, 22,  29,  36,  43,  50,
-                                 57, 72, 108, 130, 140, 150, 165};
-  const double theta_bin_minerva[]{1.83, 2.87, 3.05, 3.87, 3.54, 2.91, 2.13,
-                                   1.98, 1.55, .90,  .71,  .54,  .33};
-  const double theta_bin_minerva_error[]{.40, .57, .60, .77, .74, .61, .45,
-                                         .40, .29, .19, .14, .11, .07};
+  const double theta_bin_edges[]{0,  15,  22,  29,  36,  43,  50, 57,
+                                 72, 108, 130, 140, 150, 165, 180};
+  const double theta_bin_minerva[]{.12e1, .23e1, .28e1, .38e1, .36e1,
+                                   .30e1, .23e1, .22e1, .17e1, .10e1,
+                                   .08e1, .06e1, .04e1, .02e1};
+  const double theta_bin_minerva_error[]{.23, .21, .20, .20, .20, .20, .21,
+                                         .20, .19, .21, .19, .19, .21, .26};
 
-  const double theta_bin_minerva_error_shape[]{
-      .23, .26, .25, .29, .26, .23, .20, .19, .10, .11, .08, .06, .05};
+  // const double theta_bin_minerva_error_shape[]{
+  //     .23, .26, .25, .29, .26, .23, .20, .19, .10, .11, .08, .06, .05};
 
-  const double cov_theta[13][13]{
-      {1, .78, .71, .71, .73, .71, .66, .65, .78, .73, .72, .69, .60},
-      {.78, 1, .82, .82, .83, .82, .78, .76, .84, .74, .74, .73, .64},
-      {.71, .82, 1, .87, .86, .86, .83, .81, .85, .72, .73, .73, .65},
-      {.71, .82, .87, 1, .89, .88, .85, .83, .85, .73, .75, .74, .66},
-      {.73, .83, .86, .89, 1, .90, .86, .83, .87, .75, .76, .76, .67},
-      {.71, .82, .86, .88, .90, 1, .86, .83, .86, .74, .75, .75, .67},
-      {.66, .78, .83, .85, .86, .86, 1, .82, .84, .72, .73, .73, .66},
-      {.65, .76, .81, .83, .83, .83, .82, 1, .82, .72, .73, .72, .65},
-      {.78, .84, .85, .85, .87, .86, .84, .82, 1, .80, .80, .79, .71},
-      {.73, .74, .72, .73, .75, .74, .72, .72, .80, 1, .75, .73, .66},
-      {.72, .74, .73, .75, .76, .75, .73, .73, .80, .75, 1, .76, .67},
-      {.69, .73, .73, .74, .76, .75, .73, .72, .79, .73, .76, 1, .66},
-      {.60, .64, .65, .66, .67, .67, .66, .65, .71, .66, .67, .66, 1}};
+  const double cov_theta[14][14]{
+      {1.0000, 0.8411, 0.8344, 0.8561, 0.8561, 0.8437, 0.8104, 0.7787, 0.8562,
+       0.7050, 0.7002, 0.6942, 0.5834, 0.4134},
+      {0.8411, 1.0000, 0.8468, 0.8617, 0.8606, 0.8438, 0.8254, 0.7975, 0.8330,
+       0.6916, 0.6979, 0.6959, 0.6005, 0.4242},
+      {0.8344, 0.8468, 1.0000, 0.8735, 0.8608, 0.8527, 0.8377, 0.8141, 0.8475,
+       0.6781, 0.6873, 0.6856, 0.5911, 0.4354},
+      {0.8561, 0.8617, 0.8735, 1.0000, 0.8897, 0.8810, 0.8574, 0.8376, 0.8573,
+       0.7041, 0.7238, 0.7180, 0.6152, 0.4589},
+      {0.8561, 0.8606, 0.8608, 0.8897, 1.0000, 0.8924, 0.8637, 0.8317, 0.8607,
+       0.7207, 0.7273, 0.7261, 0.6309, 0.4594},
+      {0.8437, 0.8438, 0.8527, 0.8810, 0.8924, 1.0000, 0.8564, 0.8264, 0.8589,
+       0.7070, 0.7171, 0.7169, 0.6203, 0.4633},
+      {0.8104, 0.8254, 0.8377, 0.8574, 0.8637, 0.8564, 1.0000, 0.8160, 0.8358,
+       0.7020, 0.7147, 0.7176, 0.6325, 0.4621},
+      {0.7787, 0.7975, 0.8141, 0.8376, 0.8317, 0.8264, 0.8160, 1.0000, 0.8095,
+       0.7047, 0.7304, 0.7186, 0.6330, 0.5031},
+      {0.8562, 0.8330, 0.8475, 0.8573, 0.8607, 0.8589, 0.8358, 0.8095, 1.0000,
+       0.7619, 0.7509, 0.7447, 0.6452, 0.4745},
+      {0.7050, 0.6916, 0.6781, 0.7041, 0.7207, 0.7070, 0.7020, 0.7047, 0.7619,
+       1.0000, 0.7444, 0.7208, 0.6442, 0.4579},
+      {0.7002, 0.6979, 0.6873, 0.7238, 0.7273, 0.7171, 0.7147, 0.7304, 0.7509,
+       0.7444, 1.0000, 0.7534, 0.6670, 0.4832},
+      {0.6942, 0.6959, 0.6856, 0.7180, 0.7261, 0.7169, 0.7176, 0.7186, 0.7447,
+       0.7208, 0.7534, 1.0000, 0.6555, 0.4646},
+      {0.5834, 0.6005, 0.5911, 0.6152, 0.6309, 0.6203, 0.6325, 0.6330, 0.6452,
+       0.6442, 0.6670, 0.6555, 1.0000, 0.4535},
+      {0.4134, 0.4242, 0.4354, 0.4589, 0.4594, 0.4633, 0.4621, 0.5031, 0.4745,
+       0.4579, 0.4832, 0.4646, 0.4535, 1.0000}};
 
-  const double cov_theta_shape[13][13]{
-      {1, 0.19, -0.16, -0.24, -0.20, -0.23, -0.31, -0.26, 0.02, 0.13, 0.08,
-       0.04, -0.03},
-      {0.19, 1, 0.03, -0.02, -0.04, -0.07, -0.13, -0.13, -0.03, -0.02, -0.04,
-       -0.04, -0.06},
-      {-0.16, 0.03, 1, 0.16, 0.06, 0.07, 0.08, 0.07, -0.06, -0.16, -0.13, -0.11,
-       -0.07},
-      {-0.24, -0.02, 0.16, 1, 0.19, 0.18, 0.13, 0.09, -0.12, -0.21, -0.14,
-       -0.12, -0.11},
-      {-0.20, -0.04, 0.06, 0.19, 1, 0.24, 0.16, 0.02, -0.10, -0.14, -0.16,
-       -0.12, -0.11},
-      {-0.23, -0.07, 0.07, 0.18, 0.24, 1, 0.17, 0.07, -0.09, -0.14, -0.14,
-       -0.11, -0.09},
-      {-0.31, -0.13, 0.08, 0.13, 0.16, 0.17, 1, 0.13, -0.03, -0.11, -0.11,
-       -0.07, -0.02},
-      {-0.26, -0.13, 0.07, 0.09, 0.02, 0.07, 0.13, 1, -0.04, -0.05, -0.01,
-       -0.02, 0.02},
-      {0.02, -0.03, -0.06, -0.12, -0.10, -0.09, -0.03, -0.04, 1, 0.07, 0.04,
-       0.05, 0.06},
-      {0.13, -0.02, -0.16, -0.21, -0.14, -0.14, -0.11, -0.05, 0.07, 1, 0.17,
-       0.13, 0.11},
-      {0.08, -0.04, -0.13, -0.14, -0.16, -0.14, -0.11, -0.01, 0.04, 0.17, 1,
-       0.23, 0.16},
-      {0.04, -0.04, -0.11, -0.12, -0.12, -0.11, -0.07, -0.02, 0.05, 0.13, 0.23,
-       1, 0.17},
-      {-0.03, -0.06, -0.07, -0.11, -0.11, -0.09, -0.02, 0.02, 0.06, 0.11, 0.16,
-       0.17, 1}};
-  // double full_error_matrix_theta[13][13];
-  TMatrixT<double> full_error_matrix_theta(13, 13);
-  TMatrixT<double> full_error_matrix_theta_shape(13, 13);
-  for (int i = 0; i < 13; ++i) {
-    for (int j = 0; j < 13; ++j) {
-      full_error_matrix_theta[i][j] = cov_theta[i][j] *
-                                      theta_bin_minerva_error[i] *
-                                      theta_bin_minerva_error[j];
-      full_error_matrix_theta_shape[i][j] = cov_theta_shape[i][j] *
-                                            theta_bin_minerva_error_shape[i] *
-                                            theta_bin_minerva_error_shape[j];
+  TMatrixT<double> full_error_matrix_theta(14,14);
+  for (int i = 0; i < 14; ++i) {
+    for (int j = 0; j < 14; ++j) {
+      full_error_matrix_theta[i][j] =
+          cov_theta[i][j] * theta_bin_minerva_error[i] *
+          theta_bin_minerva_error[j] * theta_bin_minerva[j] *
+          theta_bin_minerva[j];
     }
   }
 
-  TH1D h_theta_data("h_theta_data", "h_theta_data", 13, theta_bin_edges);
-  for (int i = 0; i < 13; ++i) {
+  TH1D h_theta_data("h_theta_data", "h_theta_data", 14, theta_bin_edges);
+  for (int i = 0; i < 14; ++i) {
     h_theta_data.SetBinContent(i + 1, theta_bin_minerva[i]);
-    h_theta_data.SetBinError(i + 1, theta_bin_minerva_error[i]);
+    h_theta_data.SetBinError(i + 1,
+                             theta_bin_minerva_error[i] * theta_bin_minerva[i]);
   }
   std::vector<ROOT::RDF::RResultPtr<TH1>> objs_list{};
   objs_list
@@ -355,19 +335,13 @@ int main(int argc, const char **argv) {
   h_Tk_shape->Scale(int_Tk_data / int_Tk);
 
   auto chi2_Tk = do_chi2(h_Tk_data, *h_Tk, full_error_matrix_TK);
-  auto chi2_Tk_shape =
-      do_chi2(h_Tk_data, *h_Tk_shape, full_error_matrix_TK_shape);
 
   draw_same(h_Tk, &h_Tk_data,
             ";pion kinetic energy (MeV);d#sigma/dT_{#pi} (10^{-41} cm^{2}/MeV)",
             chi2_Tk);
-  draw_same(h_Tk_shape, &h_Tk_data,
-            ";pion kinetic energy (MeV);d#sigma/dT_{#pi} (10^{-41} cm^{2}/MeV) "
-            "shape only",
-            chi2_Tk_shape);
   objs_list
       .emplace_back(dataset_cut.Histo1D(
-          {"h_theta", "h_theta", 13, theta_bin_edges}, "pion_angle"))
+          {"h_theta", "h_theta", 14, theta_bin_edges}, "pion_angle"))
       ->Scale(xsec / count * 1e3, "WIDTH");
   auto &&h_theta = objs_list.back();
   // auto &&h_theta_nobinning = objs_list.back();
@@ -377,16 +351,10 @@ int main(int argc, const char **argv) {
   theta_shape->Scale(int_theta_data / int_theta);
 
   auto chi2_theta = do_chi2(h_theta_data, *h_theta, full_error_matrix_theta);
-  auto chi2_theta_shape =
-      do_chi2(h_theta_data, *theta_shape, full_error_matrix_theta_shape);
 
   draw_same(h_theta, &h_theta_data,
             ";pion angle (deg);d#sigma/d#theta (10^{-41} cm^{2}/deg)",
             chi2_theta);
-  draw_same(
-      theta_shape, &h_theta_data,
-      ";pion angle (deg);d#sigma/d#theta (10^{-41} cm^{2}/deg) shape only",
-      chi2_theta_shape);
 
   objs_list
       .emplace_back(dataset_cut.Histo1D(
@@ -475,9 +443,9 @@ int main(int argc, const char **argv) {
 
   save(objs_list, file);
   std::cout << "chi2_Tk = " << chi2_Tk << std::endl;
-  std::cout << "chi2_Tk_shape = " << chi2_Tk_shape << std::endl;
+  // std::cout << "chi2_Tk_shape = " << chi2_Tk_shape << std::endl;
   std::cout << "chi2_theta = " << chi2_theta << std::endl;
-  std::cout << "chi2_theta_shape = " << chi2_theta_shape << std::endl;
+  // std::cout << "chi2_theta_shape = " << chi2_theta_shape << std::endl;
 
   // W
   auto W_hist = dataset_cut.Histo1D(
